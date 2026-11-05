@@ -584,8 +584,20 @@ function applyWeather() {
   engine.setTool(preferences.tool);
   engine.setWind(preferences.windX, preferences.windY);
   engine.setIntensity(intensity[preferences.intensity]);
+  engine.setSeason(preferences.season);
 }
 function updateControls() {
+  const fall = preferences.season === "fall";
+  const headline = document.querySelector("#weather-headline");
+  const legend = document.querySelector("#intensity-legend");
+  if (headline)
+    headline.textContent = fall ? "Indoors, with leaves." : "Indoors, with snow.";
+  if (legend) legend.textContent = fall ? "Leaves" : "Snowfall";
+  for (const button of document.querySelectorAll("[data-season]"))
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.season === preferences.season),
+    );
   for (const button of document.querySelectorAll("[data-intensity]"))
     button.setAttribute(
       "aria-pressed",
@@ -599,6 +611,15 @@ function updateControls() {
   drawWind();
   updateCursor();
 }
+for (const button of document.querySelectorAll("[data-season]"))
+  button.addEventListener("click", () => {
+    preferences.season = button.dataset.season;
+    applyWeather();
+    persist();
+    updateControls();
+    drawDirty = true;
+    wake();
+  });
 for (const button of document.querySelectorAll("[data-intensity]"))
   button.addEventListener("click", () => {
     preferences.intensity = button.dataset.intensity;

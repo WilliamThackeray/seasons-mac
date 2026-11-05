@@ -9,6 +9,24 @@ const clamp = (n, low, high) => Math.max(low, Math.min(high, n));
 const finite = (n, fallback = 0) => (Number.isFinite(n) ? n : fallback);
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t);
+const LEAF_COLORS = ["#e4b423", "#ef8b2a", "#d4532c", "#b8422a", "#c47a2a", "#8f5a2a"];
+const CAP_COLORS = {
+  winter: ["#ffffff", "#f5fbff", "#c7d8e8"],
+  fall: ["#f6d36b", "#e07a32", "#8f4328"],
+};
+function leafColor(phase) {
+  const turn = ((phase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  return LEAF_COLORS[Math.floor((turn / (Math.PI * 2)) * LEAF_COLORS.length)];
+}
+function leafMark(index) {
+  const n = (Math.imul((index | 0) + 1, 1664525) + 1013904223) >>> 0;
+  return {
+    color: LEAF_COLORS[n % LEAF_COLORS.length],
+    spin: ((n >>> 8) % 628) / 100,
+    scale: 0.82 + ((n >>> 18) % 4) * 0.12,
+    lift: (n >>> 4) % 4,
+  };
+}
 
 function contains(body, x, y, padding = 0) {
   const r = body.radius + padding;
@@ -623,6 +641,7 @@ export class SnowEngine {
     this.wind = { x: 0, y: 0 };
     this.tool = "glove";
     this.intensity = 1;
+    this.season = "winter";
     this.obstacles = [];
     this.profiles = new Map();
     this.flakes = [];
@@ -669,6 +688,9 @@ export class SnowEngine {
   }
   setIntensity(value) {
     this.intensity = clamp(finite(value, 1), 0, 3);
+  }
+  setSeason(season) {
+    this.season = season === "fall" ? "fall" : "winter";
   }
   /** A light initial dusting makes the browser playground usable on its first frame. */
   prime(depth = 6) {
@@ -1484,9 +1506,10 @@ export class SnowEngine {
             0,
             p.body.y + p.body.radius + 1,
           );
-          gradient.addColorStop(0, "#ffffff");
-          gradient.addColorStop(0.45, "#f5fbff");
-          gradient.addColorStop(1, "#c7d8e8");
+          const cap = CAP_COLORS[this.season];
+          gradient.addColorStop(0, cap[0]);
+          gradient.addColorStop(0.45, cap[1]);
+          gradient.addColorStop(1, cap[2]);
           ctx.beginPath();
           ctx.moveTo(p.body.x + begin * p.spacing, top(begin));
           for (let i = begin + 1; i <= finish; i++) {
@@ -1505,19 +1528,111 @@ export class SnowEngine {
           ctx.closePath();
           ctx.fillStyle = gradient;
           ctx.fill();
+          if (this.season === "fall")
+            this._drawLeafLitter(ctx, p, begin, finish, top);
         }
         start = end + 1;
       }
     }
     this._drawMaterial(ctx);
-    ctx.fillStyle = "#fff";
-    for (const flake of this.flakes) {
-      ctx.globalAlpha = flake.opacity;
-      ctx.beginPath();
-      ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
-      ctx.fill();
+    if (this.season === "fall") {
+      for (const flake of this.flakes) this._drawLeaf(ctx, flake);
+    } else {
+      ctx.fillStyle = "#fff";
+      for (const flake of this.flakes) {
+        ctx.globalAlpha = flake.opacity;
+        ctx.beginPath();
+        ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
+  }
+  _paintPileLeaf(ctx, x, y, length, spin, color, alpha) {
+    const width = length * 0.46;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(spin);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "rgba(72, 32, 12, 0.55)";
+    ctx.lineWidth = Math.max(0.7, length * 0.11);
+    ctx.beginPath();
+    ctx.moveTo(0, -length);
+    ctx.bezierCurveTo(width, -length * 0.35, width * 0.55, length * 0.45, 0, length);
+    ctx.bezierCurveTo(-width * 0.55, length * 0.45, -width, -length * 0.35, 0, -length);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -length * 0.55);
+    ctx.lineTo(0, length * 0.62);
+    ctx.stroke();
+    ctx.restore();
+  }
+  _drawLeafLitter(ctx, profile, begin, finish, top) {
+    const salt = this._pileSalt(profile.body.id);
+    ctx.save();
+    ctx.clip();
+    for (let i = begin; i <= finish; i += 3) {
+      const height = profile.heights[i];
+      if (height < 3) continue;
+      const mark = leafMark(salt + i);
+      this._paintPileLeaf(
+        ctx,
+        profile.body.x + i * profile.spacing,
+        top(i) + Math.min(height * 0.62, 8),
+        3.6 * mark.scale,
+        mark.spin,
+        mark.color,
+        0.92,
+      );
+    }
+    ctx.restore();
+    for (let i = begin + 1; i < finish; i += 2) {
+      if (profile.heights[i] < 2.2) continue;
+      const mark = leafMark(salt + i * 5 + 11);
+      this._paintPileLeaf(
+        ctx,
+        profile.body.x + i * profile.spacing,
+        top(i) - mark.lift * 0.8,
+        7.2 * mark.scale,
+        mark.spin,
+        mark.color,
+        0.96,
+      );
+    }
+  }
+  _pileSalt(id) {
+    const text = String(id);
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) {
+      hash ^= text.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+  _drawLeaf(ctx, flake) {
+    const length = flake.radius * 6.4;
+    const width = flake.radius * 2.6;
+    const spin = flake.phase + this.elapsed * (0.35 + (flake.phase % 1) * 0.45);
+    ctx.save();
+    ctx.translate(flake.x, flake.y);
+    ctx.rotate(spin);
+    ctx.globalAlpha = flake.opacity;
+    ctx.fillStyle = leafColor(flake.phase);
+    ctx.beginPath();
+    ctx.moveTo(0, -length);
+    ctx.bezierCurveTo(width, -length * 0.35, width * 0.55, length * 0.45, 0, length);
+    ctx.bezierCurveTo(-width * 0.55, length * 0.45, -width, -length * 0.35, 0, -length);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(62, 28, 12, 0.45)";
+    ctx.lineWidth = Math.max(0.6, flake.radius * 0.35);
+    ctx.beginPath();
+    ctx.moveTo(0, -length * 0.62);
+    ctx.lineTo(0, length * 0.72);
+    ctx.stroke();
+    ctx.restore();
   }
   _drawMaterial(ctx) {
     const field = this.field;
@@ -1574,8 +1689,32 @@ export class SnowEngine {
           triangle([corners[0], corners[2], corners[3]]);
         }
     }
-    ctx.fillStyle = "#f5fbff";
+    ctx.fillStyle = this.season === "fall" ? "#d4894a" : "#f5fbff";
     ctx.fill();
+    if (this.season === "fall") this._drawLooseLeaves(ctx);
+  }
+  _drawLooseLeaves(ctx) {
+    const field = this.field;
+    ctx.save();
+    ctx.clip();
+    let drawn = 0;
+    for (let n = 0; n < field.active.length && drawn < 280; n++) {
+      const index = field.active[n];
+      if ((index & 3) !== 0 || field.mass[index] < 0.25) continue;
+      const mark = leafMark(index);
+      const point = field.point(index);
+      this._paintPileLeaf(
+        ctx,
+        point.x,
+        point.y,
+        5.2 * mark.scale,
+        mark.spin,
+        mark.color,
+        0.86,
+      );
+      drawn++;
+    }
+    ctx.restore();
   }
 }
 

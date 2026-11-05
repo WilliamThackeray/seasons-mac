@@ -162,12 +162,19 @@
               <use href="./assets/icons.svg#weather" />
             </svg>
             <div>
-              <strong>Indoors, with snow.</strong
+              <strong id="weather-headline">Indoors, with snow.</strong
               ><span>You’re in charge of the forecast.</span>
             </div>
           </div>
           <fieldset class="control-group">
-            <legend>Snowfall</legend>
+            <legend>Season</legend>
+            <div class="segmented" id="season-control">
+              <button data-season="winter" aria-pressed="true">Winter</button
+              ><button data-season="fall" aria-pressed="false">Fall</button>
+            </div>
+          </fieldset>
+          <fieldset class="control-group">
+            <legend id="intensity-legend">Snowfall</legend>
             <div class="segmented" id="intensity-control">
               <button data-intensity="light" aria-pressed="false">Light</button
               ><button data-intensity="steady" aria-pressed="true">

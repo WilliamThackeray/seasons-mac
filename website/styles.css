@@ -549,7 +549,7 @@ h1 {
 }
 .weather-window {
   width: 267px;
-  height: 318px;
+  height: 382px;
   left: 51px;
   top: 82px;
 }
@@ -1270,8 +1270,8 @@ h1 {
   }
   .desktop {
     margin-top: 31px;
-    min-height: 1290px;
-    height: 1290px;
+    min-height: 1360px;
+    height: 1360px;
     background-size:
       20px 20px,
       100% 100%;
@@ -1365,7 +1365,7 @@ h1 {
     left: 12px;
     top: 835px;
     width: calc(100% - 24px);
-    height: 332px;
+    height: 390px;
   }
   .weather-body {
     padding: 18px 23px;

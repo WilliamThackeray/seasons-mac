@@ -60,5 +60,20 @@ test("malformed and unavailable storage keep the desktop usable", () => {
   });
   assert.equal(invalid.windX, 1);
   assert.equal(invalid.tool, "glove");
+  assert.equal(invalid.season, "winter");
   assert.equal("paused" in invalid, false);
+});
+test("season is winter or fall", () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  assert.equal(
+    savePreferences(storage, { ...defaults, season: "fall" }),
+    true,
+  );
+  assert.equal(readPreferences(storage).season, "fall");
+  savePreferences(storage, { ...defaults, season: "summer" });
+  assert.equal(readPreferences(storage).season, "winter");
 });

@@ -296,6 +296,66 @@ test("viewport changes and malformed external geometry keep allocations bounded"
   assert.ok(Number.isFinite(engine.stats.totalMass));
 });
 
+test("fall is a paint skin and lands in the same places as snow", () => {
+  const winter = create([body("window", 100, 200, 400)]);
+  const fall = create([body("window", 100, 200, 400)]);
+  winter.setIntensity(1);
+  fall.setIntensity(1);
+  fall.setSeason("fall");
+  fall.setSeason("summer");
+  assert.equal(fall.season, "winter");
+  fall.setSeason("fall");
+  run(winter, 40);
+  run(fall, 40);
+  assert.deepEqual(
+    [...fall.profile("window").heights],
+    [...winter.profile("window").heights],
+  );
+  assert.deepEqual(
+    fall.flakes.map((flake) => [flake.x, flake.y, flake.radius]),
+    winter.flakes.map((flake) => [flake.x, flake.y, flake.radius]),
+  );
+  const fills = [];
+  fall.flakes.length = 0;
+  fall.flakes.push({
+    x: 40,
+    y: 40,
+    radius: 2,
+    opacity: 1,
+    phase: 0,
+    speed: 20,
+    drift: 0,
+  });
+  fall.draw({
+    clearRect() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    bezierCurveTo() {},
+    quadraticCurveTo() {},
+    closePath() {},
+    arc() {},
+    fill() {},
+    stroke() {},
+    clip() {},
+    save() {},
+    restore() {},
+    translate() {},
+    rotate() {},
+    createLinearGradient() {
+      return { addColorStop() {} };
+    },
+    set fillStyle(value) {
+      fills.push(value);
+    },
+    set globalAlpha(_) {},
+    set strokeStyle(_) {},
+    set lineWidth(_) {},
+  });
+  assert.ok(fills.includes("#e4b423"));
+  assert.equal(fills.includes("#fff"), false);
+});
+
 test("reduced motion removes decorative flakes while preserving functional material", () => {
   const engine = create([body("window", 100, 300, 600)], {
     reducedMotion: true,
