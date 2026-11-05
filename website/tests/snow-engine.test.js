@@ -296,6 +296,44 @@ test("viewport changes and malformed external geometry keep allocations bounded"
   assert.ok(Number.isFinite(engine.stats.totalMass));
 });
 
+test("spring rain sheds window caps and runs off into the floor pool", () => {
+  const engine = create([body("window", 100, 180, 400, 240)]);
+  engine.setSeason("spring");
+  engine.setIntensity(0);
+  seed(engine, "window", 8);
+  const shed = engine.profile("window").area;
+  engine.step(1 / 30);
+  assert.ok(shed > 100);
+  close(Math.max(...engine.profile("window").heights), 0, "windows stay dry");
+  assert.ok(engine.profile(FLOOR_ID).area > shed * 0.5);
+  engine.setSeason("summer");
+  assert.equal(engine.season, "winter");
+  assert.equal(engine.drips.length, 0);
+
+  engine.setSeason("spring");
+  engine.setIntensity(1 / 160);
+  engine.profile(FLOOR_ID).heights.fill(0);
+  engine.flakes.length = 0;
+  engine.drips.length = 0;
+  engine.flakes.push({
+    x: 300,
+    y: 140,
+    radius: 1.2,
+    opacity: 1,
+    speed: 80,
+    drift: 0,
+    phase: 0,
+  });
+  for (let i = 0; i < 8 && engine.drips.length === 0; i++) engine.step(1 / 30);
+  assert.equal(engine.drips.length, 1);
+  assert.ok(engine.drips[0].x > 100 && engine.drips[0].x < 500);
+  assert.equal(engine.drips[0].y, 180);
+  close(Math.max(...engine.profile("window").heights), 0, "rain does not cap the window");
+  for (let i = 0; i < 80 && engine.profile(FLOOR_ID).area < 0.2; i++)
+    engine.step(1 / 30);
+  assert.ok(engine.profile(FLOOR_ID).area > 0.2);
+});
+
 test("fall is a paint skin and lands in the same places as snow", () => {
   const winter = create([body("window", 100, 200, 400)]);
   const fall = create([body("window", 100, 200, 400)]);

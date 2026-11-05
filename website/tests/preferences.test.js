@@ -63,7 +63,7 @@ test("malformed and unavailable storage keep the desktop usable", () => {
   assert.equal(invalid.season, "winter");
   assert.equal("paused" in invalid, false);
 });
-test("season is winter or fall", () => {
+test("season is winter, spring, or fall", () => {
   const values = new Map();
   const storage = {
     getItem: (key) => values.get(key) ?? null,
@@ -74,6 +74,8 @@ test("season is winter or fall", () => {
     true,
   );
   assert.equal(readPreferences(storage).season, "fall");
+  savePreferences(storage, { ...defaults, season: "spring" });
+  assert.equal(readPreferences(storage).season, "spring");
   savePreferences(storage, { ...defaults, season: "summer" });
   assert.equal(readPreferences(storage).season, "winter");
 });

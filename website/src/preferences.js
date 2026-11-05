@@ -12,7 +12,9 @@ const finite = (x, fallback) =>
 export function validatePreferences(value) {
   const v = value && typeof value === "object" ? value : {};
   return {
-    season: ["winter", "fall"].includes(v.season) ? v.season : defaults.season,
+    season: ["winter", "spring", "fall"].includes(v.season)
+      ? v.season
+      : defaults.season,
     intensity: ["light", "steady", "flurry"].includes(v.intensity)
       ? v.intensity
       : defaults.intensity,

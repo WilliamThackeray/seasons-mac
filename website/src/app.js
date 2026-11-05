@@ -587,12 +587,15 @@ function applyWeather() {
   engine.setSeason(preferences.season);
 }
 function updateControls() {
-  const fall = preferences.season === "fall";
+  const copy = {
+    winter: ["Indoors, with snow.", "Snowfall"],
+    spring: ["Indoors, with rain.", "Rain"],
+    fall: ["Indoors, with leaves.", "Leaves"],
+  }[preferences.season] || ["Indoors, with snow.", "Snowfall"];
   const headline = document.querySelector("#weather-headline");
   const legend = document.querySelector("#intensity-legend");
-  if (headline)
-    headline.textContent = fall ? "Indoors, with leaves." : "Indoors, with snow.";
-  if (legend) legend.textContent = fall ? "Leaves" : "Snowfall";
+  if (headline) headline.textContent = copy[0];
+  if (legend) legend.textContent = copy[1];
   for (const button of document.querySelectorAll("[data-season]"))
     button.setAttribute(
       "aria-pressed",

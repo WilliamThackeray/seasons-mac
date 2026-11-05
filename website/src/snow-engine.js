@@ -12,6 +12,7 @@ const smooth = (t) => t * t * (3 - 2 * t);
 const LEAF_COLORS = ["#e4b423", "#ef8b2a", "#d4532c", "#b8422a", "#c47a2a", "#8f5a2a"];
 const CAP_COLORS = {
   winter: ["#ffffff", "#f5fbff", "#c7d8e8"],
+  spring: ["#f7fdff", "#9ad8f2", "#4aa4cf"],
   fall: ["#f6d36b", "#e07a32", "#8f4328"],
 };
 function leafColor(phase) {
@@ -645,6 +646,7 @@ export class SnowEngine {
     this.obstacles = [];
     this.profiles = new Map();
     this.flakes = [];
+    this.drips = [];
     this.reserve = [];
     this._pointer = null;
     this._accumulator = 0;
@@ -669,6 +671,7 @@ export class SnowEngine {
     this._meshMarks = new Uint32Array(this.field.mass.length);
     this.profiles.clear();
     this.flakes.length = 0;
+    this.drips.length = 0;
     this.reserve.length = 0;
     this._pointer = null;
     this._accumulator = 0;
@@ -690,7 +693,10 @@ export class SnowEngine {
     this.intensity = clamp(finite(value, 1), 0, 3);
   }
   setSeason(season) {
-    this.season = season === "fall" ? "fall" : "winter";
+    const next =
+      season === "fall" ? "fall" : season === "spring" ? "spring" : "winter";
+    if (next !== "spring") this.drips.length = 0;
+    this.season = next;
   }
   /** A light initial dusting makes the browser playground usable on its first frame. */
   prime(depth = 6) {
@@ -725,6 +731,7 @@ export class SnowEngine {
     for (const p of this.profiles.values()) p.heights.fill(0);
     this.field.clear();
     this.reserve.length = 0;
+    this.drips.length = 0;
     this._pointer = null;
   }
   get stats() {
@@ -1392,14 +1399,19 @@ export class SnowEngine {
         this._sweep(this._pointer || pointer, pointer);
       this._pointer = { x: pointer.x, y: pointer.y };
     } else this._pointer = null;
-    for (const p of this.profiles.values())
+    for (const p of this.profiles.values()) {
+      if (this.season === "spring" && p.body.id !== FLOOR) continue;
       for (let i = 0; i < p.count; i++) {
-        if (p.sky[i] && p.heights[i] < p.snowCapacity[i])
+        if (p.sky[i] && p.heights[i] < p.snowCapacity[i]) {
+          const gather = this.season === "spring" ? 2.4 : 1;
           p.heights[i] = Math.min(
             p.snowCapacity[i],
-            p.heights[i] + p.deposition[i] * dt * this.intensity,
+            p.heights[i] + p.deposition[i] * dt * this.intensity * gather,
           );
+        }
       }
+    }
+    if (this.season === "spring") this._shedToFloor();
     this._settle += dt;
     if (this._settle >= 0.1) {
       for (const p of this.profiles.values()) p.settle();
@@ -1413,14 +1425,17 @@ export class SnowEngine {
     for (let i = 0; i < this.flakes.length; i++) {
       const flake = this.flakes[i],
         start = { x: flake.x, y: flake.y };
+      const rainy = this.season === "spring";
+      const sway = rainy ? 2 : 8;
+      const speed = rainy ? flake.speed * 2.6 + 80 : flake.speed;
       const end = {
         x:
           flake.x +
           (flake.drift +
-            Math.sin(this.elapsed * 0.3 + flake.phase) * 8 +
+            Math.sin(this.elapsed * 0.3 + flake.phase) * sway +
             this.wind.x * 80) *
             dt,
-        y: flake.y + (flake.speed + this.wind.y * 20) * dt,
+        y: flake.y + (speed + this.wind.y * 20) * dt,
       };
       let first = null;
       for (const body of this.obstacles) {
@@ -1431,9 +1446,11 @@ export class SnowEngine {
       if (cap && (!first || cap.time <= first.time))
         first = { ...cap, ny: -1, profile: cap.p };
       if (first) {
-        if (first.ny < -0.5) {
+        const mass = (this.season === "spring" ? 0.9 : 0.35) * flake.radius ** 2;
+        if (this.season === "spring") this._catchRain(first, mass);
+        else if (first.ny < -0.5) {
           const p = first.profile || this.profiles.get(first.body.id);
-          if (p) p.deposit(first.x - p.body.x, 0.35 * flake.radius ** 2, true);
+          if (p) p.deposit(first.x - p.body.x, mass, true);
         }
         this.flakes[i] = this._newFlake(false);
       } else if (end.y > this.height + 5 || end.y < -40) {
@@ -1456,6 +1473,7 @@ export class SnowEngine {
         flake.y = end.y;
       }
     }
+    if (this.season === "spring") this._advanceDrips(dt);
     this._accumulator += dt * (1 + this.wind.y * 0.25);
     const steps = Math.min(3, Math.floor((this._accumulator + EPSILON) * 60));
     this._accumulator = Math.max(
@@ -1535,7 +1553,11 @@ export class SnowEngine {
       }
     }
     this._drawMaterial(ctx);
-    if (this.season === "fall") {
+    if (this.season === "spring") this._drawPool(ctx);
+    if (this.season === "spring") {
+      for (const drip of this.drips) this._drawDrip(ctx, drip);
+      for (const flake of this.flakes) this._drawRain(ctx, flake);
+    } else if (this.season === "fall") {
       for (const flake of this.flakes) this._drawLeaf(ctx, flake);
     } else {
       ctx.fillStyle = "#fff";
@@ -1547,6 +1569,91 @@ export class SnowEngine {
       }
     }
     ctx.globalAlpha = 1;
+  }
+  _catchRain(hit, mass) {
+    const body = hit.body || hit.profile?.body;
+    const floor = this.profiles.get(FLOOR);
+    if (!body || body.id === FLOOR) {
+      if (floor && Number.isFinite(hit.x))
+        floor.deposit(hit.x - floor.body.x, mass, false);
+      return;
+    }
+    const x = clamp(hit.x, body.x + 2, body.x + Math.max(2, body.width - 2));
+    if (this.drips.length >= 180) {
+      floor?.deposit(clamp(x, 0, this.width), mass, false);
+      return;
+    }
+    this.drips.push({ x, y: body.y, life: 0.42, mass });
+  }
+  _advanceDrips(dt) {
+    const floor = this.profiles.get(FLOOR);
+    let write = 0;
+    for (let i = 0; i < this.drips.length; i++) {
+      const drip = this.drips[i];
+      drip.life -= dt;
+      if (drip.life > 0) {
+        this.drips[write++] = drip;
+        continue;
+      }
+      floor?.deposit(clamp(drip.x, 0, this.width), drip.mass, false);
+    }
+    this.drips.length = write;
+  }
+  _shedToFloor() {
+    const floor = this.profiles.get(FLOOR);
+    if (!floor) return;
+    for (const profile of this.profiles.values()) {
+      if (profile.body.id === FLOOR) continue;
+      for (let i = 0; i < profile.count; i++) {
+        const height = profile.heights[i];
+        if (height <= EPSILON) continue;
+        profile.heights[i] = 0;
+        floor.deposit(
+          clamp(profile.body.x + i * profile.spacing, 0, this.width),
+          height * profile.spacing,
+          false,
+        );
+      }
+    }
+  }
+  _drawPool(ctx) {
+    const floor = this.profiles.get(FLOOR);
+    if (!floor) return;
+    let peak = 0;
+    for (let i = 0; i < floor.count; i++) peak = Math.max(peak, floor.heights[i]);
+    if (peak < 0.4) return;
+    const depth = Math.min(42, Math.max(18, peak * 1.6));
+    const gradient = ctx.createLinearGradient(0, this.height - depth, 0, this.height);
+    gradient.addColorStop(0, "rgba(247, 253, 255, 0.05)");
+    gradient.addColorStop(0.28, "rgba(186, 228, 245, 0.45)");
+    gradient.addColorStop(1, "rgba(58, 156, 196, 0.9)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, this.height - depth, this.width, depth);
+  }
+  _drawRain(ctx, flake) {
+    const length = 14 + flake.radius * 8;
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.9, flake.opacity + 0.2);
+    ctx.strokeStyle = "#d7eef8";
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(flake.x, flake.y);
+    ctx.lineTo(flake.x - this.wind.x * 12, flake.y - length);
+    ctx.stroke();
+    ctx.restore();
+  }
+  _drawDrip(ctx, drip) {
+    const t = clamp(drip.life / 0.42, 0, 1);
+    const radius = 2.1 + t * 1.3;
+    ctx.save();
+    ctx.globalAlpha = 0.35 + t * 0.6;
+    ctx.fillStyle = "#f7fdff";
+    ctx.beginPath();
+    // The window is painted above the canvas, so the bead sits entirely on the sill.
+    ctx.arc(drip.x, drip.y - radius, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
   _paintPileLeaf(ctx, x, y, length, spin, color, alpha) {
     const width = length * 0.46;
@@ -1689,7 +1796,12 @@ export class SnowEngine {
           triangle([corners[0], corners[2], corners[3]]);
         }
     }
-    ctx.fillStyle = this.season === "fall" ? "#d4894a" : "#f5fbff";
+    ctx.fillStyle =
+      this.season === "fall"
+        ? "#d4894a"
+        : this.season === "spring"
+          ? "#7ecff0"
+          : "#f5fbff";
     ctx.fill();
     if (this.season === "fall") this._drawLooseLeaves(ctx);
   }
