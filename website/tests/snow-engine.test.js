@@ -473,6 +473,70 @@ test("summer fireflies rest on sills, follow the pile cap, and scatter", () => {
   assert.equal(engine.lights.length, 0);
 });
 
+test("winter lights hang in dips and do not settle snow", () => {
+  const engine = create([body("window", 100, 180, 400, 240)]);
+  engine.setIntensity(1);
+  engine.setWind(0.4, 0);
+  seed(engine, FLOOR_ID, 8);
+  assert.equal(engine.setWinterEffect("lights"), false);
+  assert.equal(engine.winterEffect, "lights");
+  assert.equal(engine.profile(FLOOR_ID).area, 0);
+  run(engine, 40);
+  assert.equal(engine.flakes.length, 0);
+  assert.equal(engine.profile(FLOOR_ID).area, 0);
+  engine.setWind(1, 0);
+  engine.setLightStyle({ palette: "frost", dips: 5, slack: 0.55, size: 1 });
+  const loose = engine._lightSpans();
+  assert.equal(loose.length, 5);
+  assert.ok(loose[0].y0 < 8);
+  assert.ok(
+    Math.abs(loose[0].cx - (loose[0].x0 + loose[0].x1) / 2) < 0.01,
+  );
+  engine.setLightStyle({ palette: "classic", dips: 5, slack: 0.16, size: 1 });
+  const calm = engine._lightSpans()[0].cy;
+  assert.ok(calm < loose[0].cy);
+  engine.step(1 / 30, { x: loose[0].cx, y: calm });
+  const nudged = engine._lightSpans();
+  assert.equal(nudged.length, loose.length);
+  assert.ok(nudged[0].cy > calm);
+  const fills = [];
+  const ellipses = [];
+  const mock = {
+    save() {},
+    restore() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    quadraticCurveTo() {},
+    ellipse(...args) {
+      ellipses.push(args);
+    },
+    stroke() {},
+    fill() {},
+    set strokeStyle(_) {},
+    set lineWidth(_) {},
+    set lineCap(_) {},
+    set lineJoin(_) {},
+    set globalAlpha(_) {},
+    set fillStyle(value) {
+      fills.push(value);
+    },
+  };
+  engine.drawStringLights(mock);
+  const bulbs = fills.filter((color) => color === "#ff5969").length;
+  engine.setWind(0, 0);
+  engine.step(1 / 30, null);
+  engine.drawStringLights(mock);
+  assert.equal(fills.filter((color) => color === "#ff5969").length, bulbs * 2);
+  engine.setLightStyle({ palette: "classic", dips: 5, slack: 0.16, size: 1.5 });
+  engine.drawStringLights(mock);
+  assert.ok(ellipses.some((args) => args[2] > 8));
+  assert.ok(fills.includes("#ff5969"));
+  assert.equal(engine.setWinterEffect("snow"), true);
+  engine.prime();
+  assert.ok(engine.profile(FLOOR_ID).area > 0);
+});
+
 test("summer grass grows on the floor and leaves windows bare", () => {
   const engine = create([body("window", 100, 180, 400, 240)]);
   engine.setSeason("summer");

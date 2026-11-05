@@ -94,6 +94,45 @@ test("summer effect is fireflies or grass", () => {
   savePreferences(storage, { ...defaults, effect: "bees" });
   assert.equal(readPreferences(storage).effect, "fireflies");
 });
+test("winter lights remember color, dips, and slack", () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  assert.equal(defaults.winterEffect, "snow");
+  assert.equal(defaults.lightDips, 3);
+  assert.equal(defaults.lightSlack, 0.34);
+  assert.equal(defaults.lightSize, 1);
+  savePreferences(storage, {
+    ...defaults,
+    winterEffect: "lights",
+    lightColor: "frost",
+    lightDips: 5,
+    lightSlack: 0.5,
+    lightSize: 1.4,
+  });
+  const saved = readPreferences(storage);
+  assert.equal(saved.winterEffect, "lights");
+  assert.equal(saved.lightColor, "frost");
+  assert.equal(saved.lightDips, 5);
+  assert.equal(saved.lightSlack, 0.5);
+  assert.equal(saved.lightSize, 1.4);
+  savePreferences(storage, {
+    ...defaults,
+    winterEffect: "scene",
+    lightColor: "rainbow",
+    lightDips: 12,
+    lightSlack: "loose",
+    lightSize: 9,
+  });
+  const invalid = readPreferences(storage);
+  assert.equal(invalid.winterEffect, "snow");
+  assert.equal(invalid.lightColor, "classic");
+  assert.equal(invalid.lightDips, 8);
+  assert.equal(invalid.lightSlack, 0.55);
+  assert.equal(invalid.lightSize, 1.8);
+});
 test("pile height is short, normal, tall, or no limit", () => {
   const values = new Map();
   const storage = {

@@ -55,6 +55,7 @@
         <div class="ridge ridge-front"></div>
       </div>
       <canvas id="snow" aria-hidden="true"></canvas>
+      <canvas id="lights" aria-hidden="true"></canvas>
       <div class="mobile-mode" role="group" aria-label="Touch interaction">
         <button id="explore-mode" aria-pressed="true">Explore</button
         ><button id="sweep-mode" aria-pressed="false">Sweep snow</button>
@@ -177,13 +178,81 @@
           </fieldset>
           <fieldset class="control-group" id="effect-group" hidden>
             <legend>Effect</legend>
-            <div class="segmented" id="effect-control">
+            <div class="segmented" id="summer-effect" hidden>
               <button data-effect="fireflies" aria-pressed="true">
                 Fireflies</button
               ><button data-effect="grass" aria-pressed="false">Grass</button>
             </div>
+            <div class="segmented" id="winter-effect">
+              <button data-winter="snow" aria-pressed="true">Snow</button
+              ><button data-winter="lights" aria-pressed="false">Lights</button>
+            </div>
           </fieldset>
-          <fieldset class="control-group">
+          <div id="light-options" hidden>
+            <fieldset class="control-group">
+              <legend>Color</legend>
+              <div class="segmented" id="light-color">
+                <button data-light-color="classic" aria-pressed="true">
+                  Classic</button
+                ><button data-light-color="warm" aria-pressed="false">
+                  Warm</button
+                ><button data-light-color="peppermint" aria-pressed="false">
+                  Mint</button
+                ><button data-light-color="frost" aria-pressed="false">
+                  Frost
+                </button>
+              </div>
+            </fieldset>
+            <fieldset class="control-group">
+              <div class="range-label">
+                <span>Dips</span
+                ><output id="light-dips-value" for="light-dips">3</output>
+              </div>
+              <input
+                id="light-dips"
+                class="weather-range"
+                type="range"
+                min="2"
+                max="8"
+                step="1"
+                value="3"
+                aria-label="Number of dips"
+              />
+            </fieldset>
+            <fieldset class="control-group">
+              <div class="range-label">
+                <span>Slack</span
+                ><output id="light-slack-value" for="light-slack">34</output>
+              </div>
+              <input
+                id="light-slack"
+                class="weather-range"
+                type="range"
+                min="0.1"
+                max="0.65"
+                step="0.01"
+                value="0.34"
+                aria-label="Slack in each dip"
+              />
+            </fieldset>
+            <fieldset class="control-group">
+              <div class="range-label">
+                <span>Size</span
+                ><output id="light-size-value" for="light-size">100</output>
+              </div>
+              <input
+                id="light-size"
+                class="weather-range"
+                type="range"
+                min="0.6"
+                max="1.8"
+                step="0.05"
+                value="1"
+                aria-label="Light size"
+              />
+            </fieldset>
+          </div>
+          <fieldset class="control-group" id="intensity-group">
             <legend id="intensity-legend">Density</legend>
             <div class="segmented" id="intensity-control">
               <button data-intensity="light" aria-pressed="false">Light</button

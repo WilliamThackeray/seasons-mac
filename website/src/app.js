@@ -10,8 +10,10 @@ import {
 
 const desktop = document.querySelector("#desktop");
 const canvas = document.querySelector("#snow");
+const lightsCanvas = document.querySelector("#lights");
 const dock = document.querySelector("#dock");
 const ctx = canvas.getContext("2d", { alpha: true });
+const lightsCtx = lightsCanvas.getContext("2d", { alpha: true });
 const mobileQuery = matchMedia("(max-width:700px)");
 const motionQuery = matchMedia("(prefers-reduced-motion:reduce)");
 let mobile = mobileQuery.matches;
@@ -170,11 +172,21 @@ function layout() {
   );
   canvas.width = Math.max(1, Math.floor(stageBounds.width * ratio));
   canvas.height = Math.max(1, Math.floor(stageBounds.height * ratio));
+  lightsCanvas.width = canvas.width;
+  lightsCanvas.height = canvas.height;
   ctx?.setTransform(
     canvas.width / stageBounds.width,
     0,
     0,
     canvas.height / stageBounds.height,
+    0,
+    0,
+  );
+  lightsCtx?.setTransform(
+    lightsCanvas.width / stageBounds.width,
+    0,
+    0,
+    lightsCanvas.height / stageBounds.height,
     0,
     0,
   );
@@ -588,12 +600,25 @@ function applyWeather() {
   engine.setPileScale(pileScale[preferences.pile] ?? 1);
   engine.setSeason(preferences.season);
   engine.setEffect(preferences.effect);
+  engine.setLightStyle({
+    palette: preferences.lightColor,
+    dips: preferences.lightDips,
+    slack: preferences.lightSlack,
+    size: preferences.lightSize,
+  });
+  if (
+    engine.setWinterEffect(preferences.winterEffect) &&
+    preferences.season === "winter"
+  )
+    engine.prime();
 }
 function updateControls() {
   const summerGrass =
     preferences.season === "summer" && preferences.effect === "grass";
+  const winterLights =
+    preferences.season === "winter" && preferences.winterEffect === "lights";
   const copy = {
-    winter: "Indoors, with snow.",
+    winter: winterLights ? "Indoors, with lights." : "Indoors, with snow.",
     spring: "Indoors, with rain.",
     summer: summerGrass ? "Indoors, with grass." : "Indoors, with fireflies.",
     fall: "Indoors, with leaves.",
@@ -601,9 +626,23 @@ function updateControls() {
   const headline = document.querySelector("#weather-headline");
   const legend = document.querySelector("#intensity-legend");
   const effectGroup = document.querySelector("#effect-group");
+  const summerEffect = document.querySelector("#summer-effect");
+  const winterEffect = document.querySelector("#winter-effect");
+  const lightOptions = document.querySelector("#light-options");
   if (headline) headline.textContent = copy;
   if (legend) legend.textContent = "Density";
-  if (effectGroup) effectGroup.hidden = preferences.season !== "summer";
+  if (effectGroup)
+    effectGroup.hidden =
+      preferences.season !== "summer" && preferences.season !== "winter";
+  if (summerEffect) summerEffect.hidden = preferences.season !== "summer";
+  if (winterEffect) winterEffect.hidden = preferences.season !== "winter";
+  if (lightOptions) lightOptions.hidden = !winterLights;
+  const intensityGroup = document.querySelector("#intensity-group");
+  const pileGroup = document.querySelector(".pile-group");
+  const toolGroup = document.querySelector(".tool-group");
+  if (intensityGroup) intensityGroup.hidden = winterLights;
+  if (pileGroup) pileGroup.hidden = winterLights;
+  if (toolGroup) toolGroup.hidden = winterLights;
   desktop.classList.toggle("grass", summerGrass);
   for (const button of document.querySelectorAll("[data-season]"))
     button.setAttribute(
@@ -615,6 +654,30 @@ function updateControls() {
       "aria-pressed",
       String(button.dataset.effect === preferences.effect),
     );
+  for (const button of document.querySelectorAll("[data-winter]"))
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.winter === preferences.winterEffect),
+    );
+  for (const button of document.querySelectorAll("[data-light-color]"))
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.lightColor === preferences.lightColor),
+    );
+  const dips = document.querySelector("#light-dips");
+  const slack = document.querySelector("#light-slack");
+  const size = document.querySelector("#light-size");
+  if (dips) dips.value = String(preferences.lightDips);
+  if (slack) slack.value = String(preferences.lightSlack);
+  if (size) size.value = String(preferences.lightSize);
+  const dipsValue = document.querySelector("#light-dips-value");
+  const slackValue = document.querySelector("#light-slack-value");
+  const sizeValue = document.querySelector("#light-size-value");
+  if (dipsValue) dipsValue.textContent = String(preferences.lightDips);
+  if (slackValue)
+    slackValue.textContent = String(Math.round(preferences.lightSlack * 100));
+  if (sizeValue)
+    sizeValue.textContent = String(Math.round(preferences.lightSize * 100));
   for (const button of document.querySelectorAll("[data-intensity]"))
     button.setAttribute(
       "aria-pressed",
@@ -651,6 +714,40 @@ for (const button of document.querySelectorAll("[data-effect]"))
     drawDirty = true;
     wake();
   });
+for (const button of document.querySelectorAll("[data-winter]"))
+  button.addEventListener("click", () => {
+    preferences.winterEffect = button.dataset.winter;
+    applyWeather();
+    persist();
+    updateControls();
+    drawDirty = true;
+    wake();
+  });
+for (const button of document.querySelectorAll("[data-light-color]"))
+  button.addEventListener("click", () => {
+    preferences.lightColor = button.dataset.lightColor;
+    applyWeather();
+    persist();
+    updateControls();
+    drawDirty = true;
+    wake();
+  });
+for (const [id, key, read] of [
+  ["#light-dips", "lightDips", (value) => Math.round(Number(value))],
+  ["#light-slack", "lightSlack", Number],
+  ["#light-size", "lightSize", Number],
+]) {
+  const input = document.querySelector(id);
+  if (!input) continue;
+  input.addEventListener("input", () => {
+    preferences[key] = read(input.value);
+    applyWeather();
+    persist();
+    updateControls();
+    drawDirty = true;
+    wake();
+  });
+}
 for (const button of document.querySelectorAll("[data-intensity]"))
   button.addEventListener("click", () => {
     preferences.intensity = button.dataset.intensity;
@@ -1017,6 +1114,11 @@ function frame(timestamp) {
   }
   if (drawDirty && ctx) {
     engine.draw(ctx);
+    if (lightsCtx) {
+      lightsCtx.clearRect(0, 0, engine.width, engine.height);
+      if (engine.season === "winter" && engine.winterEffect === "lights")
+        engine.drawStringLights(lightsCtx);
+    }
     drawDirty = false;
   }
   updateClock();

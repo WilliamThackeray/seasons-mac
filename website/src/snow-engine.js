@@ -16,6 +16,12 @@ const CAP_COLORS = {
   fall: ["#f6d36b", "#e07a32", "#8f4328"],
 };
 const GRASS_COLORS = ["#d4f58a", "#3f9a45", "#1d5c32"];
+const LIGHT_PALETTES = {
+  classic: ["#ff5969", "#ffd778", "#67e3ac", "#68b7ff", "#de95ff"],
+  warm: ["#ffebc2", "#ffd788", "#fff4df"],
+  peppermint: ["#ff5367", "#fff4dc", "#ff838a"],
+  frost: ["#80c9ff", "#d7f6ff", "#9eb0ff", "#eef7ff"],
+};
 function leafColor(phase) {
   const turn = ((phase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   return LEAF_COLORS[Math.floor((turn / (Math.PI * 2)) * LEAF_COLORS.length)];
@@ -663,6 +669,11 @@ export class SnowEngine {
     this.pileScale = 1;
     this.season = "winter";
     this.effect = "fireflies";
+    this.winterEffect = "snow";
+    this.lightPalette = "classic";
+    this.lightDips = 3;
+    this.lightSlack = 0.34;
+    this.lightSize = 1;
     this.obstacles = [];
     this.profiles = new Map();
     this.flakes = [];
@@ -779,6 +790,30 @@ export class SnowEngine {
       if (this.season === "summer") this._seedGrass();
     }
   }
+  setWinterEffect(effect) {
+    const next = effect === "lights" ? "lights" : "snow";
+    if (next === this.winterEffect) return false;
+    const previous = this.winterEffect;
+    this.winterEffect = next;
+    if (this.season === "winter" && next === "lights") {
+      this.flakes.length = 0;
+      this._clearPiles();
+    }
+    return previous === "lights" && next === "snow" && this.season === "winter";
+  }
+  setLightStyle({ palette, dips, slack, size } = {}) {
+    this.lightPalette = LIGHT_PALETTES[palette] ? palette : "classic";
+    const count = Math.round(finite(dips, 3));
+    this.lightDips = Number.isFinite(count) ? Math.min(8, Math.max(2, count)) : 3;
+    const droop = Number(slack);
+    this.lightSlack = Number.isFinite(droop)
+      ? Math.min(0.65, Math.max(0.1, droop))
+      : 0.34;
+    const scale = Number(size);
+    this.lightSize = Number.isFinite(scale)
+      ? Math.min(1.8, Math.max(0.6, scale))
+      : 1;
+  }
   _clearPiles() {
     for (const p of this.profiles.values()) p.heights.fill(0);
     this.field?.clear();
@@ -797,6 +832,7 @@ export class SnowEngine {
   /** A light initial dusting makes the browser playground usable on its first frame. */
   prime(depth = 6) {
     if (this.season === "summer") return;
+    if (this.season === "winter" && this.winterEffect === "lights") return;
     depth = clamp(finite(depth, 0), 0, 6);
     for (const p of this.profiles.values()) {
       for (let i = 0; i < p.count; i++)
@@ -1503,7 +1539,10 @@ export class SnowEngine {
         this._sweep(this._pointer || pointer, pointer);
       this._pointer = { x: pointer.x, y: pointer.y };
     } else this._pointer = null;
+    const stringLights =
+      this.season === "winter" && this.winterEffect === "lights";
     for (const p of this.profiles.values()) {
+      if (stringLights) break;
       const grass = this.season === "summer" && this.effect === "grass";
       if (this.season === "summer" && !grass) break;
       if (grass && p.body.id !== FLOOR) continue;
@@ -1530,8 +1569,9 @@ export class SnowEngine {
       this._settle = 0;
     }
     const grass = this.season === "summer" && this.effect === "grass";
-    const desired = this.reducedMotion
-      ? 0
+    const desired =
+      this.reducedMotion || stringLights
+        ? 0
         : grass
           ? Math.round((this.mobile ? 4 : 8) * clamp(this.intensity, 0, 2.2))
           : this.season === "summer"
@@ -1995,6 +2035,96 @@ export class SnowEngine {
     ctx.moveTo(0, -length * 0.55);
     ctx.lineTo(0, length * 0.62);
     ctx.stroke();
+    ctx.restore();
+  }
+  _lightSpans() {
+    const dips = this.lightDips;
+    const slack = this.lightSlack;
+    const inset = Math.min(28, this.width * 0.03);
+    const span = Math.max(1, this.width - inset * 2) / dips;
+    const pointer = this._pointer;
+    const spans = [];
+    for (let i = 0; i < dips; i++) {
+      const x0 = inset + span * i;
+      const x1 = inset + span * (i + 1);
+      const cx = (x0 + x1) / 2;
+      let cy = Math.max(18, span * slack);
+      if (pointer) {
+        const dist = Math.hypot(pointer.x - cx, pointer.y - cy * 0.7);
+        const reach = Math.max(72, span * 0.6);
+        if (dist < reach) {
+          const influence = 1 - dist / reach;
+          cy += influence * influence * 42;
+        }
+      }
+      spans.push({ x0, y0: 1, cx, cy, x1, y1: 1, span });
+    }
+    return spans;
+  }
+  drawStringLights(ctx) {
+    const spans = this._lightSpans();
+    if (!spans.length) return;
+    const palette = LIGHT_PALETTES[this.lightPalette] || LIGHT_PALETTES.classic;
+    const scale = this.lightSize;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(spans[0].x0, spans[0].y0);
+    for (const span of spans)
+      ctx.quadraticCurveTo(span.cx, span.cy, span.x1, span.y1);
+    ctx.strokeStyle = "#1d4a32";
+    ctx.lineWidth = 1.4 + scale * 0.6;
+    ctx.stroke();
+    let color = 0;
+    for (const span of spans) {
+      const bulbs = Math.max(2, Math.round(span.span / (26 * scale)));
+      for (let n = 1; n < bulbs; n++) {
+        const t = n / bulbs;
+        const u = 1 - t;
+        const point = {
+          x: u * u * span.x0 + 2 * u * t * span.cx + t * t * span.x1,
+          y: u * u * span.y0 + 2 * u * t * span.cy + t * t * span.y1,
+        };
+        const hex = palette[color % palette.length];
+        color += 1;
+        ctx.strokeStyle = "#1d4a32";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+        ctx.lineTo(point.x, point.y + 3 * scale);
+        ctx.stroke();
+        ctx.fillStyle = hex;
+        ctx.globalAlpha = 0.32;
+        ctx.beginPath();
+        ctx.ellipse(point.x, point.y + 5 * scale, 7 * scale, 9 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.ellipse(
+          point.x,
+          point.y + 4.5 * scale,
+          3.2 * scale,
+          4.4 * scale,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.beginPath();
+        ctx.ellipse(
+          point.x - scale,
+          point.y + 3 * scale,
+          1.1 * scale,
+          1.4 * scale,
+          0,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+    }
     ctx.restore();
   }
   _drawGrassBlades(ctx, profile, begin, finish, top) {

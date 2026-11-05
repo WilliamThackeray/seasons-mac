@@ -234,6 +234,14 @@ svg {
   z-index: 1;
   pointer-events: none;
 }
+#lights {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  pointer-events: none;
+}
 .desktop-caption {
   position: absolute;
   bottom: 132px;
@@ -618,9 +626,32 @@ h1 {
 .segmented button:last-child {
   border: 0;
 }
-#season-control button {
+#season-control button,
+#light-color button {
   padding: 3px 4px;
   white-space: nowrap;
+}
+#light-options .control-group {
+  margin-bottom: 4px;
+}
+.range-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+  font-size: 10px;
+  color: #607582;
+}
+.range-label output {
+  color: #354f61;
+  font-variant-numeric: tabular-nums;
+}
+.weather-range {
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  accent-color: #2f78b0;
+  cursor: pointer;
 }
 .segmented button[aria-pressed="true"] {
   color: #164269;
