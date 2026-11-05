@@ -1,6 +1,7 @@
 export const defaults = Object.freeze({
   season: "winter",
   intensity: "steady",
+  pile: "normal",
   tool: "glove",
   windX: 0.12,
   windY: 0,
@@ -18,6 +19,9 @@ export function validatePreferences(value) {
     intensity: ["light", "steady", "flurry"].includes(v.intensity)
       ? v.intensity
       : defaults.intensity,
+    pile: ["short", "normal", "tall", "none"].includes(v.pile)
+      ? v.pile
+      : defaults.pile,
     tool: ["glove", "shovel"].includes(v.tool) ? v.tool : defaults.tool,
     windX: finite(v.windX, defaults.windX),
     windY: finite(v.windY, defaults.windY),

@@ -549,7 +549,7 @@ h1 {
 }
 .weather-window {
   width: 267px;
-  height: 382px;
+  height: 468px;
   left: 51px;
   top: 82px;
 }
@@ -698,6 +698,11 @@ h1 {
 }
 .tool-group .segmented {
   width: 139px;
+}
+.pile-group .segmented button {
+  padding: 3px 2px;
+  font-size: 9px;
+  white-space: nowrap;
 }
 .tool-group button {
   padding: 4px 10px;
@@ -1270,8 +1275,8 @@ h1 {
   }
   .desktop {
     margin-top: 31px;
-    min-height: 1360px;
-    height: 1360px;
+    min-height: 1440px;
+    height: 1440px;
     background-size:
       20px 20px,
       100% 100%;
@@ -1365,7 +1370,10 @@ h1 {
     left: 12px;
     top: 835px;
     width: calc(100% - 24px);
-    height: 390px;
+    height: 454px;
+  }
+  .pile-group .segmented button {
+    font-size: 10px;
   }
   .weather-body {
     padding: 18px 23px;

@@ -60,6 +60,32 @@ test("falling snow continues after profiles reach their limit", () => {
   assert.ok(Math.max(...engine.profile(FLOOR_ID).heights) <= 28);
 });
 
+test("pile scale raises, lowers, and removes the height cap", () => {
+  const engine = create([body("window", 100, 200, 400)]);
+  const floor = engine.profile(FLOOR_ID);
+  const middle = floor.body.width / 2;
+  engine.deposit(FLOOR_ID, middle, 8000);
+  const normal = Math.max(...floor.heights);
+  assert.ok(normal <= 28.01, `normal cap stays at 28, got ${normal}`);
+  assert.ok(normal > 20, "normal cap still fills");
+  engine.setPileScale(2.25);
+  engine.deposit(FLOOR_ID, middle, 8000);
+  const tall = Math.max(...floor.heights);
+  assert.ok(tall > 40, `tall piles pass the old cap, got ${tall}`);
+  assert.ok(tall <= 28 * 2.25 + 0.01, `tall cap is 2.25×, got ${tall}`);
+  const before = engine.stats.totalMass;
+  engine.setPileScale(0.45);
+  const short = Math.max(...floor.heights);
+  assert.ok(short <= 28 * 0.45 + 0.01, `short cap is 0.45×, got ${short}`);
+  close(engine.stats.totalMass, before, "a shorter cap keeps the displaced snow", 0.5);
+  engine.setPileScale(Infinity);
+  engine.deposit(FLOOR_ID, middle, 900);
+  const open = Math.max(...floor.heights);
+  assert.ok(open > 28, `no limit keeps stacking, got ${open}`);
+  engine.setPileScale(1);
+  assert.ok(Math.max(...engine.profile("window").heights) <= 18.01);
+});
+
 test("calm flakes drift gently and wrap only after reaching a screen edge", () => {
   const engine = create();
   engine.setIntensity(1);

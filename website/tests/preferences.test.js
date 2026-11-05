@@ -61,6 +61,7 @@ test("malformed and unavailable storage keep the desktop usable", () => {
   assert.equal(invalid.windX, 1);
   assert.equal(invalid.tool, "glove");
   assert.equal(invalid.season, "winter");
+  assert.equal(invalid.pile, "normal");
   assert.equal("paused" in invalid, false);
 });
 test("season is winter, spring, or fall", () => {
@@ -78,4 +79,18 @@ test("season is winter, spring, or fall", () => {
   assert.equal(readPreferences(storage).season, "spring");
   savePreferences(storage, { ...defaults, season: "summer" });
   assert.equal(readPreferences(storage).season, "winter");
+});
+test("pile height is short, normal, tall, or no limit", () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  assert.equal(defaults.pile, "normal");
+  savePreferences(storage, { ...defaults, pile: "none" });
+  assert.equal(readPreferences(storage).pile, "none");
+  savePreferences(storage, { ...defaults, pile: "tall" });
+  assert.equal(readPreferences(storage).pile, "tall");
+  savePreferences(storage, { ...defaults, pile: "endless" });
+  assert.equal(readPreferences(storage).pile, "normal");
 });

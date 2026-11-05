@@ -45,6 +45,7 @@ const models = new Map(
   ]),
 );
 const intensity = { light: 0.55, steady: 1, flurry: 2.2 };
+const pileScale = { short: 0.45, normal: 1, tall: 2.25, none: Infinity };
 let stageBounds = { width: 1, height: 1 };
 let stageClient = { left: 0, top: 0, width: 1, height: 1 };
 let engine;
@@ -584,6 +585,7 @@ function applyWeather() {
   engine.setTool(preferences.tool);
   engine.setWind(preferences.windX, preferences.windY);
   engine.setIntensity(intensity[preferences.intensity]);
+  engine.setPileScale(pileScale[preferences.pile] ?? 1);
   engine.setSeason(preferences.season);
 }
 function updateControls() {
@@ -606,6 +608,11 @@ function updateControls() {
       "aria-pressed",
       String(button.dataset.intensity === preferences.intensity),
     );
+  for (const button of document.querySelectorAll("[data-pile]"))
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.pile === preferences.pile),
+    );
   for (const button of document.querySelectorAll("[data-tool]"))
     button.setAttribute(
       "aria-pressed",
@@ -626,6 +633,14 @@ for (const button of document.querySelectorAll("[data-season]"))
 for (const button of document.querySelectorAll("[data-intensity]"))
   button.addEventListener("click", () => {
     preferences.intensity = button.dataset.intensity;
+    applyWeather();
+    persist();
+    updateControls();
+    wake();
+  });
+for (const button of document.querySelectorAll("[data-pile]"))
+  button.addEventListener("click", () => {
+    preferences.pile = button.dataset.pile;
     applyWeather();
     persist();
     updateControls();

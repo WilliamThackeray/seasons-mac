@@ -262,7 +262,7 @@ function outside(body, point, nx, ny, padding) {
 }
 
 class Profile {
-  constructor(body, count, phase) {
+  constructor(body, count, phase, scale = 1) {
     this.body = body;
     this.count = count;
     this.spacing = body.width / (count - 1);
@@ -274,7 +274,9 @@ class Profile {
     this.sky = new Uint8Array(count);
     this.shadow = new Uint8Array(count);
     this.lobe = new Float64Array(count);
-    const limit = body.id === FLOOR ? 28 : body.kind === "dock" ? 13 : 18;
+    this.taper = new Float64Array(count);
+    this.baseLimit = body.id === FLOOR ? 28 : body.kind === "dock" ? 13 : 18;
+    this.scale = 1;
     for (let i = 0; i < count; i++) {
       const x = i * this.spacing;
       const taper =
@@ -286,10 +288,25 @@ class Profile {
         Math.sin(x * 0.027 + phase) * 0.18 +
         Math.sin(x * 0.071 + phase * 2) * 0.09 +
         Math.sin(x * 0.13 + phase) * 0.05;
-      this.capacity[i] = limit * taper;
+      this.taper[i] = taper;
       this.lobe[i] = lobe;
-      this.snowCapacity[i] = this.capacity[i] * lobe;
       this.deposition[i] = (0.18 + lobe * 0.17) * taper;
+    }
+    this.setScale(scale);
+  }
+  setScale(scale) {
+    this.scale = scale;
+    const finiteScale = Number.isFinite(scale);
+    for (let i = 0; i < this.count; i++) {
+      const shaped = this.baseLimit * this.taper[i];
+      this.capacity[i] =
+        this.taper[i] === 0 ? 0 : finiteScale ? shaped * scale : Infinity;
+      this.snowCapacity[i] =
+        this.capacity[i] === 0
+          ? 0
+          : finiteScale
+            ? this.capacity[i] * this.lobe[i]
+            : Infinity;
     }
   }
   base(local) {
@@ -642,6 +659,7 @@ export class SnowEngine {
     this.wind = { x: 0, y: 0 };
     this.tool = "glove";
     this.intensity = 1;
+    this.pileScale = 1;
     this.season = "winter";
     this.obstacles = [];
     this.profiles = new Map();
@@ -692,6 +710,35 @@ export class SnowEngine {
   setIntensity(value) {
     this.intensity = clamp(finite(value, 1), 0, 3);
   }
+  setPileScale(scale) {
+    const next =
+      scale === Infinity ? Infinity : clamp(finite(scale, 1), 0.25, 6);
+    if (this.pileScale === next) return;
+    this.pileScale = next;
+    if (!this.profiles || !this.field) return;
+    this.field.begin();
+    for (const p of this.profiles.values()) {
+      p.setScale(next);
+      for (let i = 0; i < p.count; i++) {
+        if (!(p.heights[i] > p.capacity[i] + EPSILON)) continue;
+        const extra = (p.heights[i] - p.capacity[i]) * p.spacing;
+        const local = i * p.spacing;
+        const x = p.body.x + local;
+        p.heights[i] = p.capacity[i];
+        const y = p.base(local) - p.heights[i] - 1;
+        const left = this.field.add(extra, x, y, 0, 1);
+        if (left > EPSILON)
+          this._retain({
+            x,
+            y,
+            mass: left,
+            height: Math.max(2, left / p.spacing),
+          });
+      }
+    }
+    this._exposure();
+    this._placeReserve();
+  }
   setSeason(season) {
     const next =
       season === "fall" ? "fall" : season === "spring" ? "spring" : "winter";
@@ -702,15 +749,11 @@ export class SnowEngine {
   prime(depth = 6) {
     depth = clamp(finite(depth, 0), 0, 6);
     for (const p of this.profiles.values()) {
-      const limit = p.body.id === FLOOR ? 28 : p.body.kind === "dock" ? 13 : 18;
       for (let i = 0; i < p.count; i++)
         if (p.sky[i] && !p.shadow[i]) {
           p.heights[i] = Math.max(
             p.heights[i],
-            Math.min(
-              p.capacity[i],
-              (depth * p.lobe[i] * p.capacity[i]) / limit,
-            ),
+            Math.min(p.capacity[i], depth * p.lobe[i] * p.taper[i]),
           );
         }
     }
@@ -967,6 +1010,7 @@ export class SnowEngine {
             : String(body.id)
                 .split("")
                 .reduce((v, c) => v + c.charCodeAt(0), 0) * 0.17,
+          this.pileScale,
         );
         if (previous) {
           const oldArea = previous.area;
@@ -1164,7 +1208,10 @@ export class SnowEngine {
   _exposure() {
     if (!this.profiles) return;
     const strength = Math.abs(this.wind.x),
-      reach = strength * 96;
+      reach = strength * 96,
+      pileReach = Number.isFinite(this.pileScale)
+        ? 28 * this.pileScale
+        : this.height;
     for (const p of this.profiles.values())
       for (let i = 0; i < p.count; i++) {
         const local = i * p.spacing,
@@ -1185,12 +1232,12 @@ export class SnowEngine {
           if (
             !strength ||
             body.y >= base - 0.5 ||
-            body.y + body.height < base - 28
+            body.y + body.height < base - pileReach
           )
             continue;
           const contactStrength =
-            clamp((body.y + body.height - base + 28) / 28, 0, 1) *
-            clamp((base - body.y) / 28, 0, 1);
+            clamp((body.y + body.height - base + pileReach) / pileReach, 0, 1) *
+            clamp((base - body.y) / pileReach, 0, 1);
           const sampleY = clamp(base, body.y, body.y + body.height),
             edge = Math.min(sampleY - body.y, body.y + body.height - sampleY),
             r = body.radius;
@@ -1221,15 +1268,16 @@ export class SnowEngine {
         p.exposed[i] = exposed ? 1 : 0;
         p.sky[i] = sky && exposed ? 1 : 0;
         p.shadow[i] = suppression === 0 ? 1 : 0;
-        p.snowCapacity[i] = Math.min(
-          p.capacity[i],
-          p.capacity[i] * p.lobe[i] * (1 + capacityBoost) * suppression,
-        );
-        const taper =
-          p.capacity[i] /
-          (p.body.id === FLOOR ? 28 : p.body.kind === "dock" ? 13 : 18);
+        const factor = p.lobe[i] * (1 + capacityBoost) * suppression;
+        p.snowCapacity[i] =
+          factor <= 0 || p.capacity[i] === 0
+            ? 0
+            : Math.min(p.capacity[i], p.capacity[i] * factor);
         p.deposition[i] =
-          (0.18 + p.lobe[i] * 0.17) * taper * (1 + boost) * suppression;
+          (0.18 + p.lobe[i] * 0.17) *
+          p.taper[i] *
+          (1 + boost) *
+          suppression;
       }
   }
   _profileHit(start, end, radius, allowEmbedded = false) {
@@ -1237,10 +1285,13 @@ export class SnowEngine {
     for (const p of this.profiles.values()) {
       const minX = Math.min(start.x, end.x),
         maxX = Math.max(start.x, end.x);
+      const ceiling = Number.isFinite(this.pileScale)
+        ? Math.max(30, p.baseLimit * this.pileScale + 2)
+        : this.height;
       if (
         maxX < p.body.x ||
         minX > p.body.x + p.body.width ||
-        Math.max(start.y, end.y) < p.body.y - 30 ||
+        Math.max(start.y, end.y) < p.body.y - ceiling ||
         start.y > p.body.y + p.body.radius + 1
       )
         continue;
