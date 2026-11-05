@@ -1,5 +1,6 @@
 export const defaults = Object.freeze({
   season: "winter",
+  effect: "fireflies",
   intensity: "steady",
   pile: "normal",
   tool: "glove",
@@ -13,9 +14,10 @@ const finite = (x, fallback) =>
 export function validatePreferences(value) {
   const v = value && typeof value === "object" ? value : {};
   return {
-    season: ["winter", "spring", "fall"].includes(v.season)
+    season: ["winter", "spring", "summer", "fall"].includes(v.season)
       ? v.season
       : defaults.season,
+    effect: ["fireflies", "grass"].includes(v.effect) ? v.effect : defaults.effect,
     intensity: ["light", "steady", "flurry"].includes(v.intensity)
       ? v.intensity
       : defaults.intensity,

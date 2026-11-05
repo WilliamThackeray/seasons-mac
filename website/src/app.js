@@ -587,21 +587,33 @@ function applyWeather() {
   engine.setIntensity(intensity[preferences.intensity]);
   engine.setPileScale(pileScale[preferences.pile] ?? 1);
   engine.setSeason(preferences.season);
+  engine.setEffect(preferences.effect);
 }
 function updateControls() {
+  const summerGrass =
+    preferences.season === "summer" && preferences.effect === "grass";
   const copy = {
-    winter: ["Indoors, with snow.", "Snowfall"],
-    spring: ["Indoors, with rain.", "Rain"],
-    fall: ["Indoors, with leaves.", "Leaves"],
-  }[preferences.season] || ["Indoors, with snow.", "Snowfall"];
+    winter: "Indoors, with snow.",
+    spring: "Indoors, with rain.",
+    summer: summerGrass ? "Indoors, with grass." : "Indoors, with fireflies.",
+    fall: "Indoors, with leaves.",
+  }[preferences.season] || "Indoors, with snow.";
   const headline = document.querySelector("#weather-headline");
   const legend = document.querySelector("#intensity-legend");
-  if (headline) headline.textContent = copy[0];
-  if (legend) legend.textContent = copy[1];
+  const effectGroup = document.querySelector("#effect-group");
+  if (headline) headline.textContent = copy;
+  if (legend) legend.textContent = "Density";
+  if (effectGroup) effectGroup.hidden = preferences.season !== "summer";
+  desktop.classList.toggle("grass", summerGrass);
   for (const button of document.querySelectorAll("[data-season]"))
     button.setAttribute(
       "aria-pressed",
       String(button.dataset.season === preferences.season),
+    );
+  for (const button of document.querySelectorAll("[data-effect]"))
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.effect === preferences.effect),
     );
   for (const button of document.querySelectorAll("[data-intensity]"))
     button.setAttribute(
@@ -624,6 +636,15 @@ function updateControls() {
 for (const button of document.querySelectorAll("[data-season]"))
   button.addEventListener("click", () => {
     preferences.season = button.dataset.season;
+    applyWeather();
+    persist();
+    updateControls();
+    drawDirty = true;
+    wake();
+  });
+for (const button of document.querySelectorAll("[data-effect]"))
+  button.addEventListener("click", () => {
+    preferences.effect = button.dataset.effect;
     applyWeather();
     persist();
     updateControls();

@@ -171,11 +171,20 @@
             <div class="segmented" id="season-control">
               <button data-season="winter" aria-pressed="true">Winter</button
               ><button data-season="spring" aria-pressed="false">Spring</button
+              ><button data-season="summer" aria-pressed="false">Summer</button
               ><button data-season="fall" aria-pressed="false">Fall</button>
             </div>
           </fieldset>
+          <fieldset class="control-group" id="effect-group" hidden>
+            <legend>Effect</legend>
+            <div class="segmented" id="effect-control">
+              <button data-effect="fireflies" aria-pressed="true">
+                Fireflies</button
+              ><button data-effect="grass" aria-pressed="false">Grass</button>
+            </div>
+          </fieldset>
           <fieldset class="control-group">
-            <legend id="intensity-legend">Snowfall</legend>
+            <legend id="intensity-legend">Density</legend>
             <div class="segmented" id="intensity-control">
               <button data-intensity="light" aria-pressed="false">Light</button
               ><button data-intensity="steady" aria-pressed="true">

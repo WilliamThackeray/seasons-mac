@@ -15,6 +15,7 @@ const CAP_COLORS = {
   spring: ["#f7fdff", "#9ad8f2", "#4aa4cf"],
   fall: ["#f6d36b", "#e07a32", "#8f4328"],
 };
+const GRASS_COLORS = ["#d4f58a", "#3f9a45", "#1d5c32"];
 function leafColor(phase) {
   const turn = ((phase % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   return LEAF_COLORS[Math.floor((turn / (Math.PI * 2)) * LEAF_COLORS.length)];
@@ -661,10 +662,12 @@ export class SnowEngine {
     this.intensity = 1;
     this.pileScale = 1;
     this.season = "winter";
+    this.effect = "fireflies";
     this.obstacles = [];
     this.profiles = new Map();
     this.flakes = [];
     this.drips = [];
+    this.lights = [];
     this.reserve = [];
     this._pointer = null;
     this._accumulator = 0;
@@ -690,6 +693,7 @@ export class SnowEngine {
     this.profiles.clear();
     this.flakes.length = 0;
     this.drips.length = 0;
+    this.lights.length = 0;
     this.reserve.length = 0;
     this._pointer = null;
     this._accumulator = 0;
@@ -738,15 +742,61 @@ export class SnowEngine {
     }
     this._exposure();
     this._placeReserve();
+    this._trimLights();
   }
   setSeason(season) {
     const next =
-      season === "fall" ? "fall" : season === "spring" ? "spring" : "winter";
+      season === "fall"
+        ? "fall"
+        : season === "spring"
+          ? "spring"
+          : season === "summer"
+            ? "summer"
+            : "winter";
     if (next !== "spring") this.drips.length = 0;
+    if (next !== "summer") this.lights.length = 0;
+    if (
+      this.season === "summer" &&
+      next !== "summer" &&
+      this.effect === "grass"
+    )
+      this._clearPiles();
+    if (next === "summer" && this.season !== "summer") {
+      this._clearPiles();
+      if (this.effect === "grass") this._seedGrass();
+    }
     this.season = next;
+  }
+  setEffect(effect) {
+    const next = effect === "grass" ? "grass" : "fireflies";
+    if (next === this.effect) return;
+    const previous = this.effect;
+    this.effect = next;
+    if (previous === "grass") this._clearPiles();
+    if (next === "grass") {
+      this.lights.length = 0;
+      this.flakes.length = 0;
+      if (this.season === "summer") this._seedGrass();
+    }
+  }
+  _clearPiles() {
+    for (const p of this.profiles.values()) p.heights.fill(0);
+    this.field?.clear();
+    this.reserve.length = 0;
+  }
+  _seedGrass() {
+    const floor = this.profiles.get(FLOOR);
+    if (!floor) return;
+    for (let i = 0; i < floor.count; i++)
+      if (floor.sky[i] && !floor.shadow[i])
+        floor.heights[i] = Math.max(
+          floor.heights[i],
+          Math.min(floor.capacity[i], 3.2 * floor.lobe[i] * floor.taper[i]),
+        );
   }
   /** A light initial dusting makes the browser playground usable on its first frame. */
   prime(depth = 6) {
+    if (this.season === "summer") return;
     depth = clamp(finite(depth, 0), 0, 6);
     for (const p of this.profiles.values()) {
       for (let i = 0; i < p.count; i++)
@@ -775,6 +825,7 @@ export class SnowEngine {
     this.field.clear();
     this.reserve.length = 0;
     this.drips.length = 0;
+    this.lights.length = 0;
     this._pointer = null;
   }
   get stats() {
@@ -1414,6 +1465,8 @@ export class SnowEngine {
       });
     }
     for (const chunk of chunks) this._retain(chunk);
+    if (this.season === "summer" && this.effect !== "grass")
+      this._scatterLights(nearest, direction, radius);
     this._placeReserve();
   }
   _newFlake(scattered) {
@@ -1451,10 +1504,14 @@ export class SnowEngine {
       this._pointer = { x: pointer.x, y: pointer.y };
     } else this._pointer = null;
     for (const p of this.profiles.values()) {
+      const grass = this.season === "summer" && this.effect === "grass";
+      if (this.season === "summer" && !grass) break;
+      if (grass && p.body.id !== FLOOR) continue;
       if (this.season === "spring" && p.body.id !== FLOOR) continue;
       for (let i = 0; i < p.count; i++) {
         if (p.sky[i] && p.heights[i] < p.snowCapacity[i]) {
-          const gather = this.season === "spring" ? 2.4 : 1;
+          const gather =
+            this.season === "summer" ? 7 : this.season === "spring" ? 2.4 : 1;
           p.heights[i] = Math.min(
             p.snowCapacity[i],
             p.heights[i] + p.deposition[i] * dt * this.intensity * gather,
@@ -1462,18 +1519,35 @@ export class SnowEngine {
         }
       }
     }
+    if (this.season === "summer" && this.effect === "grass") {
+      for (const p of this.profiles.values())
+        if (p.body.id !== FLOOR) p.heights.fill(0);
+    }
     if (this.season === "spring") this._shedToFloor();
     this._settle += dt;
     if (this._settle >= 0.1) {
       for (const p of this.profiles.values()) p.settle();
       this._settle = 0;
     }
+    const grass = this.season === "summer" && this.effect === "grass";
     const desired = this.reducedMotion
       ? 0
-      : Math.round((this.mobile ? 64 : 160) * Math.min(1, this.intensity));
+        : grass
+          ? Math.round((this.mobile ? 4 : 8) * clamp(this.intensity, 0, 2.2))
+          : this.season === "summer"
+          ? Math.round((this.mobile ? 12 : 28) * clamp(this.intensity, 0, 2.2))
+          : Math.round((this.mobile ? 64 : 160) * Math.min(1, this.intensity));
     if (this.flakes.length > desired) this.flakes.length = desired;
     while (this.flakes.length < desired) this.flakes.push(this._newFlake(true));
     for (let i = 0; i < this.flakes.length; i++) {
+      if (this.season === "summer" && this.effect !== "grass") {
+        this._stepFirefly(this.flakes[i], i, dt);
+        continue;
+      }
+      if (this.season === "summer" && this.effect === "grass") {
+        this._stepSeed(this.flakes[i], i, dt);
+        continue;
+      }
       const flake = this.flakes[i],
         start = { x: flake.x, y: flake.y };
       const rainy = this.season === "spring";
@@ -1542,8 +1616,16 @@ export class SnowEngine {
   }
   draw(ctx) {
     ctx.clearRect(0, 0, this.width, this.height);
+    if (this.season === "summer" && this.effect !== "grass") {
+      for (const light of this.lights) this._drawFirefly(ctx, light, true);
+      for (const flake of this.flakes) this._drawFirefly(ctx, flake, false);
+      ctx.globalAlpha = 1;
+      return;
+    }
+    const grass = this.season === "summer" && this.effect === "grass";
     // Every cap uses the same connected profile shading as transported material.
     for (const p of this.profiles.values()) {
+      if (grass && p.body.id !== FLOOR) continue;
       let start = 0;
       while (start < p.count) {
         while (
@@ -1575,7 +1657,7 @@ export class SnowEngine {
             0,
             p.body.y + p.body.radius + 1,
           );
-          const cap = CAP_COLORS[this.season];
+          const cap = grass ? GRASS_COLORS : CAP_COLORS[this.season];
           gradient.addColorStop(0, cap[0]);
           gradient.addColorStop(0.45, cap[1]);
           gradient.addColorStop(1, cap[2]);
@@ -1597,7 +1679,8 @@ export class SnowEngine {
           ctx.closePath();
           ctx.fillStyle = gradient;
           ctx.fill();
-          if (this.season === "fall")
+          if (grass) this._drawGrassBlades(ctx, p, begin, finish, top);
+          else if (this.season === "fall")
             this._drawLeafLitter(ctx, p, begin, finish, top);
         }
         start = end + 1;
@@ -1610,7 +1693,9 @@ export class SnowEngine {
       for (const flake of this.flakes) this._drawRain(ctx, flake);
     } else if (this.season === "fall") {
       for (const flake of this.flakes) this._drawLeaf(ctx, flake);
-    } else {
+    } else if (grass) {
+      for (const flake of this.flakes) this._drawSeed(ctx, flake);
+    } else if (!grass) {
       ctx.fillStyle = "#fff";
       for (const flake of this.flakes) {
         ctx.globalAlpha = flake.opacity;
@@ -1649,6 +1734,190 @@ export class SnowEngine {
       floor?.deposit(clamp(drip.x, 0, this.width), drip.mass, false);
     }
     this.drips.length = write;
+  }
+  _lightBudget() {
+    if (!Number.isFinite(this.pileScale)) return Infinity;
+    return Math.max(3, Math.round(22 * this.pileScale));
+  }
+  _lightGap() {
+    if (!Number.isFinite(this.pileScale)) return 8;
+    return clamp(26 / this.pileScale, 8, 48);
+  }
+  _trimLights() {
+    const budget = this._lightBudget();
+    if (this.lights && this.lights.length > budget) this.lights.length = budget;
+  }
+  _restFirefly(hit) {
+    if (this.lights.length >= this._lightBudget()) return false;
+    const body = hit.profile?.body || hit.body;
+    if (!body) return false;
+    const x = clamp(hit.x, body.x + 4, body.x + Math.max(4, body.width - 4));
+    const y =
+      body.id === FLOOR ? body.y - 28 : body.kind === "dock" ? body.y - 14 : body.y - 16;
+    const gap = this._lightGap();
+    for (const light of this.lights)
+      if ((light.x - x) ** 2 + (light.y - y) ** 2 < gap * gap) return false;
+    this.lights.push({ x, y, phase: this.random() * Math.PI * 2 });
+    return true;
+  }
+  _stepFirefly(flake, index, dt) {
+    const start = { x: flake.x, y: flake.y };
+    const wander = Math.cos(this.elapsed * 0.8 + flake.phase) * 34;
+    const bob = Math.sin(this.elapsed * 2.1 + flake.phase) * 10;
+    const end = {
+      x: flake.x + (wander + this.wind.x * 150) * dt,
+      y: flake.y + (20 + bob + this.wind.y * 28) * dt,
+    };
+    let first = null;
+    for (const body of this.obstacles) {
+      const hit = rayBody(start, end, body, flake.radius);
+      if (hit && (!first || hit.time < first.time)) first = { ...hit, body };
+    }
+    const cap = this._profileHit(start, end, flake.radius);
+    if (cap && (!first || cap.time <= first.time))
+      first = { ...cap, ny: -1, profile: cap.p };
+    if (first?.profile) {
+      if (this._restFirefly(first)) this.flakes[index] = this._newFlake(false);
+      else {
+        flake.y = start.y - 4;
+        flake.x = start.x + (Math.sin(flake.phase + this.elapsed) >= 0 ? 16 : -16);
+      }
+      return;
+    }
+    if (first) {
+      const body = first.body;
+      flake.x = start.x + (start.x < body.x + body.width / 2 ? -10 : 10);
+      flake.y = start.y - 6;
+      return;
+    }
+    if (end.y > this.height - 2) {
+      const floor = this.profiles.get(FLOOR);
+      if (
+        floor &&
+        this._restFirefly({
+          x: clamp(end.x, 0, this.width),
+          profile: floor,
+        })
+      )
+        this.flakes[index] = this._newFlake(false);
+      else {
+        flake.x = clamp(end.x, 0, this.width);
+        flake.y = 8;
+      }
+      return;
+    }
+    flake.x =
+      end.x < -5
+        ? end.x + this.width + 10
+        : end.x > this.width + 5
+          ? end.x - this.width - 10
+          : end.x;
+    flake.y = end.y < -20 ? this.height - 12 : end.y;
+  }
+  _stepSeed(flake, index, dt) {
+    const start = { x: flake.x, y: flake.y };
+    const end = {
+      x:
+        flake.x +
+        (Math.sin(this.elapsed * 0.45 + flake.phase) * 16 + this.wind.x * 70) *
+          dt,
+      y: flake.y + (12 + flake.speed * 0.28 + this.wind.y * 14) * dt,
+    };
+    let hit = null;
+    for (const body of this.obstacles) {
+      const next = rayBody(start, end, body, flake.radius);
+      if (next && (!hit || next.time < hit.time)) hit = next;
+    }
+    const cap = this._profileHit(start, end, flake.radius);
+    if ((hit || cap || end.y > this.height + 4) && end.y > 0) {
+      this.flakes[index] = this._newFlake(false);
+      return;
+    }
+    flake.x =
+      end.x < -5
+        ? end.x + this.width + 10
+        : end.x > this.width + 5
+          ? end.x - this.width - 10
+          : end.x;
+    flake.y = end.y;
+  }
+  _drawSeed(ctx, flake) {
+    const length = 10 + flake.radius * 3.5;
+    ctx.save();
+    ctx.translate(flake.x, flake.y);
+    ctx.rotate(flake.phase + this.elapsed * 0.55);
+    ctx.globalAlpha = Math.min(0.72, flake.opacity);
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#e4efc4";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(0, length * 0.42);
+    ctx.lineTo(0, -length * 0.42);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+    ctx.lineWidth = 0.7;
+    const head = -length * 0.46;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, head);
+      ctx.lineTo(Math.cos(angle) * 4.4, head + Math.sin(angle) * 4.4);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.beginPath();
+    ctx.arc(0, head, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  _scatterLights(nearest, direction, radius) {
+    let write = 0;
+    for (const light of this.lights) {
+      const close = nearest(light);
+      if (Math.hypot(light.x - close.x, light.y - close.y) > radius) {
+        this.lights[write++] = light;
+        continue;
+      }
+      const away = direction(light);
+      this.flakes.unshift({
+        x: light.x + away.x * 12,
+        y: light.y - 10,
+        radius: 1.3,
+        opacity: 1,
+        speed: 16,
+        drift: away.x * 36,
+        phase: light.phase,
+      });
+    }
+    this.lights.length = write;
+  }
+  _drawFirefly(ctx, bug, resting) {
+    const pulse =
+      0.5 + 0.5 * Math.sin(this.elapsed * (resting ? 2.4 : 3.6) + bug.phase);
+    const bright = Number.isFinite(this.pileScale)
+      ? clamp(this.pileScale, 0.8, 1.65)
+      : 1.65;
+    const glow = (resting ? 11 : 9) * (0.85 + pulse * 0.3);
+    const y = bug.y;
+    const gradient = ctx.createRadialGradient(bug.x, y, 0, bug.x, y, glow);
+    gradient.addColorStop(0, `rgba(255, 252, 220, ${0.95})`);
+    gradient.addColorStop(0.16, `rgba(230, 255, 140, ${0.75})`);
+    gradient.addColorStop(0.45, `rgba(190, 240, 80, ${0.28 + pulse * 0.2})`);
+    gradient.addColorStop(1, "rgba(170, 230, 60, 0)");
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, bright);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(bug.x, y, glow, 0, Math.PI * 2);
+    ctx.fill();
+    if (resting) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#fffceb";
+      ctx.beginPath();
+      ctx.arc(bug.x, bug.y, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
   _shedToFloor() {
     const floor = this.profiles.get(FLOOR);
@@ -1726,6 +1995,33 @@ export class SnowEngine {
     ctx.moveTo(0, -length * 0.55);
     ctx.lineTo(0, length * 0.62);
     ctx.stroke();
+    ctx.restore();
+  }
+  _drawGrassBlades(ctx, profile, begin, finish, top) {
+    const salt = this._pileSalt(profile.body.id);
+    ctx.save();
+    ctx.lineCap = "round";
+    for (let i = begin; i <= finish; i += 2) {
+      const height = profile.heights[i];
+      if (height < 1.5) continue;
+      const mark = leafMark(salt + i);
+      const x = profile.body.x + i * profile.spacing;
+      const y = top(i);
+      const lean = (mark.spin - 3.1) * 1.6;
+      const length = 5 + mark.scale * Math.min(12, height * 0.55);
+      ctx.strokeStyle = i % 4 === 0 ? "#8fce63" : "#2f7a34";
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth = 1.15;
+      ctx.beginPath();
+      ctx.moveTo(x, y + 1);
+      ctx.quadraticCurveTo(
+        x + lean * 0.4,
+        y - length * 0.55,
+        x + lean,
+        y - length,
+      );
+      ctx.stroke();
+    }
     ctx.restore();
   }
   _drawLeafLitter(ctx, profile, begin, finish, top) {
@@ -1848,11 +2144,13 @@ export class SnowEngine {
         }
     }
     ctx.fillStyle =
-      this.season === "fall"
-        ? "#d4894a"
-        : this.season === "spring"
-          ? "#7ecff0"
-          : "#f5fbff";
+      this.season === "summer" && this.effect === "grass"
+        ? "#4f9a45"
+        : this.season === "fall"
+          ? "#d4894a"
+          : this.season === "spring"
+            ? "#7ecff0"
+            : "#f5fbff";
     ctx.fill();
     if (this.season === "fall") this._drawLooseLeaves(ctx);
   }

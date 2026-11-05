@@ -332,7 +332,7 @@ test("spring rain sheds window caps and runs off into the floor pool", () => {
   assert.ok(shed > 100);
   close(Math.max(...engine.profile("window").heights), 0, "windows stay dry");
   assert.ok(engine.profile(FLOOR_ID).area > shed * 0.5);
-  engine.setSeason("summer");
+  engine.setSeason("holiday");
   assert.equal(engine.season, "winter");
   assert.equal(engine.drips.length, 0);
 
@@ -366,7 +366,7 @@ test("fall is a paint skin and lands in the same places as snow", () => {
   winter.setIntensity(1);
   fall.setIntensity(1);
   fall.setSeason("fall");
-  fall.setSeason("summer");
+  fall.setSeason("holiday");
   assert.equal(fall.season, "winter");
   fall.setSeason("fall");
   run(winter, 40);
@@ -430,4 +430,106 @@ test("reduced motion removes decorative flakes while preserving functional mater
   engine.step(1 / 30, { x: 400, y: 297 });
   assert.equal(engine.flakes.length, 0);
   assert.ok(engine.stats.loose + engine.stats.pending > 0);
+});
+
+test("summer fireflies rest on sills, follow the pile cap, and scatter", () => {
+  const engine = create([body("window", 100, 180, 400, 240)]);
+  engine.setSeason("summer");
+  assert.equal(engine.season, "summer");
+  engine.setWind(0, 0);
+  seed(engine, "window", 8);
+  engine.setSeason("winter");
+  engine.setSeason("summer");
+  assert.equal(engine.profile("window").area, 0);
+  engine.flakes.length = 0;
+  engine.lights.length = 0;
+  engine.setIntensity(1 / 28);
+  engine.flakes.push({
+    x: 300,
+    y: 150,
+    radius: 1.2,
+    opacity: 1,
+    speed: 20,
+    drift: 0,
+    phase: 0,
+  });
+  for (let i = 0; i < 120 && engine.lights.length === 0; i++) engine.step(1 / 30);
+  assert.equal(engine.lights.length, 1);
+  assert.ok(engine.lights[0].x > 100 && engine.lights[0].x < 500);
+  assert.ok(engine.lights[0].y < 180);
+  assert.equal(Math.max(...engine.profile("window").heights), 0);
+  const light = { ...engine.lights[0] };
+  engine.setTool("shovel");
+  engine.step(1 / 30, { x: light.x, y: light.y });
+  assert.equal(engine.lights.length, 0);
+  for (let i = 0; i < 40; i++)
+    engine.lights.push({ x: 20 + i * 24, y: 12, phase: i });
+  engine.setPileScale(0.45);
+  assert.equal(engine.lights.length, 10);
+  engine.setPileScale(Infinity);
+  engine.lights.push({ x: 12, y: 20, phase: 1 });
+  assert.equal(engine.lights.length, 11);
+  engine.setSeason("fall");
+  assert.equal(engine.lights.length, 0);
+});
+
+test("summer grass grows on the floor and leaves windows bare", () => {
+  const engine = create([body("window", 100, 180, 400, 240)]);
+  engine.setSeason("summer");
+  engine.setEffect("grass");
+  engine.setIntensity(1);
+  engine.setWind(0, 0);
+  const seeded = engine.profile(FLOOR_ID).area;
+  assert.ok(seeded > 0, "grass starts as a short lawn");
+  assert.equal(engine.profile("window").area, 0);
+  run(engine, 90);
+  assert.ok(engine.profile(FLOOR_ID).area > seeded + 10);
+  assert.equal(engine.profile("window").area, 0);
+  assert.equal(engine.flakes.length, 8);
+  assert.equal(engine.lights.length, 0);
+  assert.ok(Math.max(...engine.profile(FLOOR_ID).heights) <= 28.01);
+  const strokes = [];
+  engine.draw({
+    clearRect() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    arc() {},
+    quadraticCurveTo() {},
+    closePath() {},
+    fill() {},
+    stroke() {},
+    save() {},
+    restore() {},
+    translate() {},
+    rotate() {},
+    clip() {},
+    createLinearGradient() {
+      return { addColorStop() {} };
+    },
+    set fillStyle(_) {},
+    set strokeStyle(value) {
+      strokes.push(value);
+    },
+    set globalAlpha(_) {},
+    set lineWidth(_) {},
+    set lineCap(_) {},
+  });
+  assert.ok(strokes.includes("#8fce63"));
+  const grown = Math.max(...engine.profile(FLOOR_ID).heights);
+  engine.setPileScale(Infinity);
+  run(engine, 40);
+  assert.ok(Math.max(...engine.profile(FLOOR_ID).heights) > grown + 1);
+  engine.setTool("shovel");
+  const before = engine.profile(FLOOR_ID).area;
+  engine.step(1 / 30, { x: 30, y: engine.height - 4 });
+  assert.ok(engine.profile(FLOOR_ID).area < before);
+  engine.setEffect("fireflies");
+  assert.equal(engine.effect, "fireflies");
+  assert.equal(engine.profile(FLOOR_ID).area, 0);
+  engine.setSeason("winter");
+  engine.setEffect("grass");
+  engine.setSeason("summer");
+  engine.setSeason("winter");
+  assert.equal(engine.profile(FLOOR_ID).area, 0);
 });
