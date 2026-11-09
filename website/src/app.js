@@ -948,7 +948,7 @@ document.querySelector("#terminal-form").addEventListener("submit", (event) => {
       terminalLine("clear    Clear this terminal.");
       terminalLine("snow     Make it a flurry.");
       terminalLine("calm     Put the wind down.");
-      terminalLine("about    About Snowy.");
+      terminalLine("about    About Szns.");
       terminalLine("github   Open the source code.");
       terminalLine("defrost  Check the seasonal freezer.");
       break;
@@ -969,7 +969,7 @@ document.querySelector("#terminal-form").addEventListener("submit", (event) => {
       break;
     case "about":
       terminalLine(
-        "Snowy is a little winter for your Mac. Free, open source, and entirely unnecessary.",
+        "Szns (Seasons) is a little weather for your Mac. Free, open source, and entirely unnecessary.",
       );
       terminalLine("macOS 14+ · Apple silicon");
       break;

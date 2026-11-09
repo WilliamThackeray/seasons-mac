@@ -18,7 +18,7 @@ Windward corners of protruding walls receive snowfall faster and can use more of
 
 The wind control follows the user's arrow sketch: a rounded, neutral native material, quiet dot grid, and a single accent-colored arrow. Arrow angle controls direction and length controls strength. Dragging follows the pointer directly with a bounded rubber-band beyond full length and thickness feedback while stretching/compressing. A short damped spring returns presentation to the stored strength on release. The native transient popover supplies entry/exit motion and turns that off under Reduce Motion. Outside clicks, Close, and Escape dismiss it. A release-spring timer is invalidated at rest, reset, or dismissal; Reduce Motion snaps the arrow immediately. Keyboard changes are immediate. Reset returns to calm. Outside its brief settling spring, the pad redraws for events only. Native labels, accent colors, popover material, keyboard focus, and VoiceOver actions follow macOS appearance/accessibility settings.
 
-The wind pad is available from the existing snowflake menu as Wind… rather than adding a permanently floating utility window. Direction/strength are applied to both airborne flakes and detached snow, and saved with existing preferences. The only explanatory line is the direct drag instruction; no implementation details appear in the product.
+The wind pad sits in the snowflake panel rather than in a permanently floating utility window. Direction/strength are applied to both airborne flakes and detached snow, and saved with existing preferences. The only explanatory line is the direct drag instruction; no implementation details appear in the product.
 
 # Geometry decisions
 

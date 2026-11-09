@@ -49,7 +49,7 @@ export default {
     try {
       if (url.pathname === '/api/checkout') {
         if (request.method !== 'POST') return json({error:'Method not allowed.'},405);
-        if (request.headers.get('origin') !== ORIGIN) return json({error:'Open Snowy to start checkout.'},403);
+        if (request.headers.get('origin') !== ORIGIN) return json({error:'Open Szns to start checkout.'},403);
         if (!request.headers.get('content-type')?.startsWith('application/json')) return json({error:'JSON required.'},415);
         if (!await limit(request,env,'checkout',15)) return json({error:'Please wait a minute before trying again.'},429);
         let value; try { value = JSON.parse(await body(request,1024)); } catch { return json({error:'Invalid request.'},400); }

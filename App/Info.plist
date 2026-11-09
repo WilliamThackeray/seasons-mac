@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-    <key>CFBundleName</key><string>Snowy</string>
-    <key>CFBundleDisplayName</key><string>Snowy</string>
-    <key>CFBundleExecutable</key><string>Snowy</string>
+    <key>CFBundleName</key><string>Szns</string>
+    <key>CFBundleDisplayName</key><string>Szns (Seasons)</string>
+    <key>CFBundleExecutable</key><string>Szns</string>
     <key>CFBundleIdentifier</key><string>app.snowy.desktop</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleIconFile</key><string>Snowy.icns</string>
+    <key>CFBundleIconFile</key><string>Szns.icns</string>
     <key>CFBundleShortVersionString</key><string>0.10.0</string>
     <key>CFBundleVersion</key><string>13</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
@@ -17,7 +17,7 @@
     <array>
         <dict>
             <key>UTTypeIdentifier</key><string>app.snowy.desktop.editor-card</string>
-            <key>UTTypeDescription</key><string>Snowy Editor Card</string>
+            <key>UTTypeDescription</key><string>Szns Editor Card</string>
             <key>UTTypeConformsTo</key><array><string>public.data</string></array>
         </dict>
     </array>

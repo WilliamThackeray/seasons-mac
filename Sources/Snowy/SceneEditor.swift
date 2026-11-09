@@ -151,7 +151,7 @@ struct SceneEditor: View {
                     settings.includesDesktopIcons = true
                     DesktopIconGeometry.requestAccess()
                 }
-                .help("Allow Snowy in Privacy & Security → Accessibility to use Finder icon edges")
+                .help("Allow Szns in Privacy & Security → Accessibility to use Finder icon edges")
             }
             if let desktop, settings.layout != .none {
                 Button("Load Preset") {

@@ -10,7 +10,7 @@ if [[ $# -ne 1 || ! "$tag" =~ '^v[0-9]+\.[0-9]+\.[0-9]+$' ]]; then
   exit 2
 fi
 release_dir="$project_root/build/releases"
-zip_name="Snowy-macOS-arm64.zip"
+zip_name="Szns-macOS-arm64.zip"
 if [[ -L "$project_root/build" || -L "$release_dir" || ! -f "$release_dir/$zip_name" || -L "$release_dir/$zip_name" ]]; then
   print -u2 "Package the Apple silicon release before generating the appcast."
   exit 1
@@ -21,10 +21,10 @@ if [[ -L "$release_dir/appcast.xml" || -d "$release_dir/appcast.xml" ]]; then
 fi
 sparkle_bin="$project_root/.build/artifacts/sparkle/Sparkle/bin"
 if [[ ! -x "$sparkle_bin/generate_appcast" ]]; then
-  print -u2 "Build Snowy to resolve its pinned Sparkle release tools."
+  print -u2 "Build the app to resolve its pinned Sparkle release tools."
   exit 1
 fi
-staging_dir="$(mktemp -d "$release_dir/.Snowy-appcast.XXXXXX")"
+staging_dir="$(mktemp -d "$release_dir/.Szns-appcast.XXXXXX")"
 trap 'rm -rf "$staging_dir"' EXIT
 cp "$release_dir/$zip_name" "$staging_dir/$zip_name"
 base_url="https://github.com/soloiaros/snowy-mac/releases/download/$tag/"

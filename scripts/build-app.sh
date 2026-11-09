@@ -14,22 +14,22 @@ if [[ $# -eq 1 ]]; then
   fi
 fi
 if [[ "$(uname -s)" != "Darwin" ]]; then
-  print -u2 "Snowy builds on macOS with Xcode and its Metal toolchain."
+  print -u2 "Szns builds on macOS with Xcode and its Metal toolchain."
   exit 1
 fi
 if [[ -L "$project_root/build" ]]; then
   print -u2 "Refusing a redirected build directory. Use a real build/ directory in this checkout."
   exit 1
 fi
-app_dir="$project_root/build/Snowy.app"
+app_dir="$project_root/build/Szns.app"
 if [[ -e "$app_dir" || -L "$app_dir" ]]; then
   if [[ -L "$app_dir" || ! -d "$app_dir" || ! -f "$app_dir/Contents/Info.plist" ]] \
     || [[ "$(plutil -extract CFBundleIdentifier raw "$app_dir/Contents/Info.plist" 2>/dev/null || true)" != "app.snowy.desktop" ]]; then
-    print -u2 "Refusing to replace a bundle not identified as Snowy in build/."
+    print -u2 "Refusing to replace a bundle not identified as Szns in build/."
     exit 1
   fi
 fi
-swift build -c release --product Snowy
+swift build -c release --product Szns
 binary_dir="$(swift build -c release --show-bin-path)"
 sparkle_artifact="$project_root/.build/artifacts/sparkle/Sparkle"
 sparkle_framework="$sparkle_artifact/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
@@ -38,12 +38,12 @@ if [[ ! -L "$sparkle_framework/Versions/Current" || ! -x "$sparkle_framework/Spa
   exit 1
 fi
 mkdir -p "$project_root/build" "$project_root/.build/shaders"
-staging_dir="$(mktemp -d "$project_root/build/.Snowy-build.XXXXXX")"
+staging_dir="$(mktemp -d "$project_root/build/.Szns-build.XXXXXX")"
 trap 'rm -rf "$staging_dir"' EXIT
-staged_app="$staging_dir/Snowy.app"
+staged_app="$staging_dir/Szns.app"
 mkdir -p "$staged_app/Contents/MacOS" "$staged_app/Contents/Resources" "$staged_app/Contents/Frameworks"
-staged_binary="$staged_app/Contents/MacOS/Snowy"
-cp "$binary_dir/Snowy" "$staged_binary"
+staged_binary="$staged_app/Contents/MacOS/Szns"
+cp "$binary_dir/Szns" "$staged_binary"
 cp "$project_root/App/Info.plist" "$staged_app/Contents/Info.plist"
 # Keep Sparkle's versioned symlinks and its signed updater helpers intact.
 ditto "$sparkle_framework" "$staged_app/Contents/Frameworks/Sparkle.framework"
@@ -60,9 +60,9 @@ xcrun -sdk macosx metal -mmacosx-version-min=14.0 -c \
   "$project_root/Sources/Snowy/Shaders/Snow.metal" -o "$project_root/.build/shaders/Snow.air"
 xcrun -sdk macosx metallib "$project_root/.build/shaders/Snow.air" \
   -o "$staged_app/Contents/Resources/Snow.metallib"
-mkdir "$staging_dir/Snowy.iconset"
-swift "$project_root/scripts/render-install-art.swift" icon "$staging_dir/Snowy.iconset"
-iconutil -c icns "$staging_dir/Snowy.iconset" -o "$staged_app/Contents/Resources/Snowy.icns"
+mkdir "$staging_dir/Szns.iconset"
+swift "$project_root/scripts/render-install-art.swift" icon "$staging_dir/Szns.iconset"
+iconutil -c icns "$staging_dir/Szns.iconset" -o "$staged_app/Contents/Resources/Szns.icns"
 if [[ $# -eq 1 ]]; then
   framework="$staged_app/Contents/Frameworks/Sparkle.framework"
   sparkle_version="$framework/Versions/Current"
@@ -81,4 +81,10 @@ codesign --verify --deep --strict "$staged_app"
 # Replace only the generated bundle, after every build and signing step succeeds.
 rm -rf "$app_dir"
 mv "$staged_app" "$app_dir"
+# Earlier local builds used this path. Remove that copy when it is this same app.
+legacy_dir="$project_root/build/Snowy.app"
+if [[ -d "$legacy_dir" && ! -L "$legacy_dir" ]] \
+  && [[ "$(plutil -extract CFBundleIdentifier raw "$legacy_dir/Contents/Info.plist" 2>/dev/null || true)" == "app.snowy.desktop" ]]; then
+  rm -rf "$legacy_dir"
+fi
 print "Built $app_dir"

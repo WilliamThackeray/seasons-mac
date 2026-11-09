@@ -5,7 +5,7 @@ Snowy brings interactive snow to window edges, desktop widgets, Spotlight, and a
 - Pick a pixel-art preset or build a custom scene. Props catch snow, snap to the desktop edge or Dock, and can slide when swept.
 - Hang string lights from display edges, widgets, or supported Finder icons. Lights respond to wind and cursor crossings. Finder icon anchors use optional Accessibility access.
 
-Open the DMG and drag **Snowy.app** onto **Applications**. If you have 0.9.1 or earlier, quit it and replace it with this copy once. Going forward, a blue **Update** item in the snowflake menu appears for newer compatible releases. Click it to download, install, and reopen Snowy.
+Open the DMG and drag **Szns.app** onto **Applications**. If you have 0.9.1 or earlier, quit it and replace it with this copy once. Going forward, a blue **Update** item in the snowflake panel appears for newer compatible releases. Click it to download, install, and reopen Szns.
 
 Requires Apple Silicon and macOS 14 or later.
 

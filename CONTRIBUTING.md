@@ -42,7 +42,7 @@ For a local packaging check, run:
 ./scripts/package-release.sh
 ```
 
-This writes an architecture-labelled DMG, ZIP, and their SHA-256 checksums into `build/releases/`. The DMG contains Snowy.app and an Applications shortcut over a Retina winter background. Packaging uses Python 3 with venv and pip to install two hash-pinned Finder metadata helpers in a temporary environment. It draws the artwork offscreen, writes Finder metadata directly to an owned staging image, and verifies the signed app, ZIP, disk-image checksum, background alias, and icon positions. It never opens Finder or launches Snowy.
+This writes an architecture-labelled DMG, ZIP, and their SHA-256 checksums into `build/releases/`. The DMG contains Szns.app and an Applications shortcut over a Retina winter background. Packaging uses Python 3 with venv and pip to install two hash-pinned Finder metadata helpers in a temporary environment. It draws the artwork offscreen, writes Finder metadata directly to an owned staging image, and verifies the signed app, ZIP, disk-image checksum, background alias, and icon positions. It never opens Finder or launches Szns.
 
 The automated release workflow requires a [Developer ID Application certificate](https://developer.apple.com/help/account/certificates/create-developer-id-certificates/) with its private key and credentials for Apple's notary service. For a local distribution build, set `SNOWY_CODESIGN_IDENTITY` to the Developer ID identity name or fingerprint and `SNOWY_NOTARY_PROFILE` to the name of a profile created with `xcrun notarytool store-credentials`, then run `./scripts/package-release.sh --notarize`.
 

@@ -22,14 +22,14 @@ elif [[ "$mode" != "--skip-build" ]]; then
   "$project_root/scripts/build-app.sh"
 fi
 
-app_dir="$project_root/build/Snowy.app"
-binary="$app_dir/Contents/MacOS/Snowy"
+app_dir="$project_root/build/Szns.app"
+binary="$app_dir/Contents/MacOS/Szns"
 if [[ -L "$project_root/build" || -L "$app_dir" || ! -d "$app_dir" || ! -f "$binary" ]]; then
-  print -u2 "Missing build/Snowy.app. Run ./scripts/build-app.sh first."
+  print -u2 "Missing build/Szns.app. Run ./scripts/build-app.sh first."
   exit 1
 fi
 if [[ "$(plutil -extract CFBundleIdentifier raw "$app_dir/Contents/Info.plist" 2>/dev/null || true)" != "app.snowy.desktop" ]]; then
-  print -u2 "Refusing to package a bundle not identified as Snowy."
+  print -u2 "Refusing to package a bundle not identified as Szns."
   exit 1
 fi
 codesign --verify --deep --strict "$app_dir"
@@ -47,7 +47,7 @@ if [[ -L "$project_root/build" || -L "$release_dir" ]]; then
   exit 1
 fi
 mkdir -p "$release_dir"
-staging_dir="$(mktemp -d "$release_dir/.Snowy-package.XXXXXX")"
+staging_dir="$(mktemp -d "$release_dir/.Szns-package.XXXXXX")"
 mounted=0
 function cleanup() {
   if [[ "$mounted" == 1 ]]; then
@@ -56,8 +56,8 @@ function cleanup() {
   rm -rf "$staging_dir"
 }
 trap cleanup EXIT
-archive_name="Snowy-macOS-$architecture.zip"
-dmg_name="Snowy-macOS-$architecture.dmg"
+archive_name="Szns-macOS-$architecture.zip"
+dmg_name="Szns-macOS-$architecture.dmg"
 for filename in "$archive_name" "$dmg_name" "$archive_name.sha256" "$dmg_name.sha256"; do
   if [[ -L "$release_dir/$filename" || -d "$release_dir/$filename" ]]; then
     print -u2 "Refusing to replace a redirected release file: $filename"
@@ -86,8 +86,8 @@ if [[ "$mode" == "--notarize" ]]; then
   # Notarize the app through a temporary ZIP. Only the extracted .app can carry
   # a ticket, so the release ZIP is made from the stapled app below.
   mkdir "$staging_dir/signed"
-  ditto "$app_dir" "$staging_dir/signed/Snowy.app"
-  app_dir="$staging_dir/signed/Snowy.app"
+  ditto "$app_dir" "$staging_dir/signed/Szns.app"
+  app_dir="$staging_dir/signed/Szns.app"
   ditto -c -k --sequesterRsrc --keepParent "$app_dir" "$staging_dir/notary-upload.zip"
   notarize_and_staple "$staging_dir/notary-upload.zip" "$app_dir"
 fi
@@ -96,10 +96,10 @@ fi
 ditto -c -k --sequesterRsrc --keepParent "$app_dir" "$staging_dir/$archive_name"
 mkdir "$staging_dir/verify"
 ditto -x -k "$staging_dir/$archive_name" "$staging_dir/verify"
-codesign --verify --deep --strict "$staging_dir/verify/Snowy.app"
+codesign --verify --deep --strict "$staging_dir/verify/Szns.app"
 if [[ "$mode" == "--notarize" ]]; then
-  xcrun stapler validate "$staging_dir/verify/Snowy.app"
-  syspolicy_check distribution "$staging_dir/verify/Snowy.app"
+  xcrun stapler validate "$staging_dir/verify/Szns.app"
+  syspolicy_check distribution "$staging_dir/verify/Szns.app"
 fi
 
 # Prepare the Finder view directly on an owned writable staging image. This
@@ -110,12 +110,12 @@ layout_python="$staging_dir/tools/bin/python"
   --only-binary=:all: --require-hashes -r "$project_root/scripts/dmg-layout-requirements.txt"
 mkdir -p "$staging_dir/image/.background" "$staging_dir/art" "$staging_dir/mount"
 swift "$project_root/scripts/render-install-art.swift" background "$staging_dir/art"
-tiffutil -cathidpicheck "$staging_dir/art/Snowy.png" "$staging_dir/art/Snowy@2x.png" \
-  -out "$staging_dir/image/.background/Snowy.tiff"
-ditto "$app_dir" "$staging_dir/image/Snowy.app"
+tiffutil -cathidpicheck "$staging_dir/art/Szns.png" "$staging_dir/art/Szns@2x.png" \
+  -out "$staging_dir/image/.background/Szns.tiff"
+ditto "$app_dir" "$staging_dir/image/Szns.app"
 ln -s /Applications "$staging_dir/image/Applications"
-cp "$app_dir/Contents/Resources/Snowy.icns" "$staging_dir/image/.VolumeIcon.icns"
-hdiutil create -quiet -volname Snowy -fs HFS+ -format UDRW \
+cp "$app_dir/Contents/Resources/Szns.icns" "$staging_dir/image/.VolumeIcon.icns"
+hdiutil create -quiet -volname Szns -fs HFS+ -format UDRW \
   -srcfolder "$staging_dir/image" "$staging_dir/writable.dmg"
 hdiutil attach -quiet -readwrite -nobrowse -noautoopen -owners off \
   -mountpoint "$staging_dir/mount" "$staging_dir/writable.dmg"
@@ -136,9 +136,9 @@ hdiutil attach -quiet -readonly -nobrowse -noautoopen \
   -mountpoint "$staging_dir/mount" "$staging_dir/$dmg_name"
 mounted=1
 "$layout_python" "$project_root/scripts/dmg-layout.py" verify "$staging_dir/mount"
-codesign --verify --deep --strict "$staging_dir/mount/Snowy.app"
+codesign --verify --deep --strict "$staging_dir/mount/Szns.app"
 if [[ "$mode" == "--notarize" ]]; then
-  xcrun stapler validate "$staging_dir/mount/Snowy.app"
+  xcrun stapler validate "$staging_dir/mount/Szns.app"
 fi
 if [[ ! -L "$staging_dir/mount/Applications" || "$(readlink "$staging_dir/mount/Applications")" != /Applications ]]; then
   print -u2 "The disk image is missing its Applications shortcut."

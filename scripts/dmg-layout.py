@@ -6,13 +6,13 @@ from ds_store import DSStore
 from mac_alias import Alias
 
 WINDOW = "{{140, 130}, {660, 440}}"
-POSITIONS = {"Snowy.app": (185, 240), "Applications": (475, 240)}
+POSITIONS = {"Szns.app": (185, 240), "Applications": (475, 240)}
 
 
 def write_layout(volume, background):
     alias = Alias.for_file(str(background))
     # Preserve volume identity and file IDs, without recording the build path.
-    alias.volume.posix_path = "/Volumes/Snowy"
+    alias.volume.posix_path = "/Volumes/Szns"
     with DSStore.open(str(volume / ".DS_Store"), "w+") as layout:
         layout["."]["vSrn"] = ("long", 1)
         layout["."]["icvl"] = ("type", b"icnv")
@@ -56,9 +56,9 @@ def verify_layout(volume, background):
         alias = Alias.from_bytes(options["backgroundImageAlias"])
         actual = Alias.for_file(str(background))
         assert alias.target.cnid == actual.target.cnid
-        assert alias.volume.name == "Snowy"
-        assert alias.volume.posix_path == "/Volumes/Snowy"
-        assert alias.target.posix_path == "/.background/Snowy.tiff"
+        assert alias.volume.name == "Szns"
+        assert alias.volume.posix_path == "/Volumes/Szns"
+        assert alias.target.posix_path == "/.background/Szns.tiff"
         for name, position in POSITIONS.items():
             assert tuple(layout[name]["Iloc"]) == position
     print("Verified Finder window, background alias and icon positions.")
@@ -66,9 +66,9 @@ def verify_layout(volume, background):
 
 mode, mount = sys.argv[1:]
 volume = Path(mount).resolve(strict=True)
-if volume.name != "mount" or not volume.parent.name.startswith(".Snowy-package.") or not volume.is_mount():
+if volume.name != "mount" or not volume.parent.name.startswith(".Szns-package.") or not volume.is_mount():
     raise SystemExit("Use the mounted image owned by package-release.sh.")
-background = volume / ".background" / "Snowy.tiff"
+background = volume / ".background" / "Szns.tiff"
 if not background.is_file():
     raise SystemExit("Missing Finder background.")
 if mode == "write":

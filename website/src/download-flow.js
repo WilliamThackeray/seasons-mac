@@ -53,7 +53,7 @@ export function setupDownloadFlow({ onOpen = () => {}, onSupportOpen = () => {} 
     free.hidden = true;
     submit.textContent = parsed.ok && parsed.cents > 0
       ? "Support & download"
-      : "Download Snowy";
+      : "Download Szns";
     for (const preset of presets)
       preset.setAttribute("aria-pressed", String(parsed.ok && parsed.cents === Number(preset.dataset.amount) * 100));
   }
@@ -139,7 +139,7 @@ export function setupDownloadFlow({ onOpen = () => {}, onSupportOpen = () => {} 
   if (reference || returned.searchParams.has('payment_cancelled')) {
     trigger.click();
     if (!reference) {
-      message(feedback, 'Checkout cancelled. No problem — Snowy is still yours for $0.');
+      message(feedback, 'Checkout cancelled. No problem — Szns is still yours for $0.');
       history.replaceState(null, '', location.pathname + location.hash);
     } else {
       message(feedback, 'Confirming your payment…');
@@ -150,14 +150,14 @@ export function setupDownloadFlow({ onOpen = () => {}, onSupportOpen = () => {} 
             const result = await response.json();
             if (!response.ok) throw Error('We couldn’t confirm this payment. You can still download for $0.');
             if (result.status === 'succeeded') {
-              message(feedback, result.amountCents > 0 ? 'Thank you for supporting Snowy! Your download is ready below.' : 'Your download is ready. Enjoy the snow!');
+              message(feedback, result.amountCents > 0 ? 'Thank you for supporting Szns! Your download is ready below.' : 'Your download is ready. Enjoy the weather!');
               history.replaceState(null, '', location.pathname + location.hash);
               return;
             }
             if (['failed', 'expired'].includes(result.status)) throw Error('This checkout didn’t complete. You can still download for $0.');
             await new Promise(resolve => setTimeout(resolve, 1500));
           }
-          message(feedback, 'Your payment is still processing. Refresh to check again, or download Snowy for $0 now.');
+          message(feedback, 'Your payment is still processing. Refresh to check again, or download Szns for $0 now.');
         } catch (error) { message(feedback, error.message); }
       })();
     }

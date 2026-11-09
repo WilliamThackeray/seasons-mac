@@ -13,15 +13,15 @@
     <meta name="theme-color" content="#102c4c" />
     <meta
       name="description"
-      content="A little winter for your Mac. Snowy brings interactive snow to your desktop: it lands on windows, piles up, and sweeps away with your cursor. Free and open source."
+      content="A little weather for your Mac. Szns (Seasons) brings the year to your desktop: it lands on windows, piles up, and sweeps away with your cursor. Free and open source."
     />
-    <meta property="og:title" content="Snowy — a little winter for your Mac" />
+    <meta property="og:title" content="Szns (Seasons) — a little weather for your Mac" />
     <meta
       property="og:description"
       content="Your windows have a forecast. A free, open-source Mac app, with an interactive desktop to play in."
     />
     <meta property="og:type" content="website" />
-    <title>Snowy — a little winter for your Mac</title>
+    <title>Szns (Seasons) — a little weather for your Mac</title>
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./src/app.js"></script>
@@ -29,11 +29,11 @@
   <body>
     <a class="skip-link" href="#download">Skip to download</a>
     <header class="menubar" aria-label="Desktop menu">
-      <button class="menu-brand" data-open="welcome" aria-label="About Snowy">
+      <button class="menu-brand" data-open="welcome" aria-label="About Szns">
         <svg aria-hidden="true"><use href="./assets/icons.svg#snow" /></svg
-        ><strong>Snowy</strong>
+        ><strong>Szns</strong>
       </button>
-      <nav class="desktop-menu" aria-label="Snowy menu">
+      <nav class="desktop-menu" aria-label="Szns menu">
         <button data-open="readme">Read me</button
         ><button data-open="weather">Weather</button
         ><a
@@ -49,7 +49,7 @@
       </div>
     </header>
 
-    <main id="desktop" class="desktop" aria-label="Interactive Snowy desktop">
+    <main id="desktop" class="desktop" aria-label="Interactive Szns desktop">
       <div class="wallpaper-art" aria-hidden="true">
         <div class="ridge ridge-back"></div>
         <div class="ridge ridge-front"></div>
@@ -65,31 +65,31 @@
         id="window-welcome"
         class="window welcome-window"
         data-window="welcome"
-        aria-label="About Snowy"
+        aria-label="About Szns"
       >
         <header
           class="titlebar"
           tabindex="0"
-          aria-label="Move About Snowy window with arrow keys"
+          aria-label="Move About Szns window with arrow keys"
         >
           <div class="traffic-lights">
             <button
               class="light close"
               data-close="welcome"
-              aria-label="Close About Snowy"
+              aria-label="Close About Szns"
             ></button
             ><button
               class="light minimize"
               data-close="welcome"
-              aria-label="Minimize About Snowy"
+              aria-label="Minimize About Szns"
             ></button
             ><button
               class="light maximize"
               data-maximize="welcome"
-              aria-label="Resize About Snowy"
+              aria-label="Resize About Szns"
             ></button>
           </div>
-          <span>Snowy for Mac</span
+          <span>Szns (Seasons)</span>
           ><svg class="title-icon" aria-hidden="true">
             <use href="./assets/icons.svg#snow" />
           </svg>
@@ -98,7 +98,7 @@
           <svg class="app-icon" aria-hidden="true">
             <use href="./assets/icons.svg#snow" />
           </svg>
-          <h1>Snowy</h1>
+          <h1>Szns (Seasons)</h1>
           <p class="welcome-subtitle">A little winter for your Mac.</p>
           <button
             id="download"
@@ -108,7 +108,7 @@
             aria-controls="download-dialog"
             ><svg aria-hidden="true">
               <use href="./assets/icons.svg#laptop" /></svg
-            >Get Snowy for Mac</button
+            >Get Szns for Mac</button
           >
           <p class="download-detail">
             Pay what you want, including $0. macOS 14+, Apple silicon.
@@ -123,7 +123,7 @@
         </div>
         <button
           class="resize-grip"
-          aria-label="Resize About Snowy window"
+          aria-label="Resize About Szns window"
         ></button>
       </section>
 
@@ -359,7 +359,7 @@
         id="window-terminal"
         class="window terminal-window"
         data-window="terminal"
-        aria-label="Snowy Terminal"
+        aria-label="Szns Terminal"
         hidden
       >
         <header
@@ -388,7 +388,7 @@
         </header>
         <div class="window-body terminal-body">
           <div id="terminal-output" class="terminal-output" aria-live="polite">
-            <p>Snowy Desktop 0.9</p>
+            <p>Szns Desktop 0.9</p>
             <p>A very small shell. Try “help”.</p>
           </div>
           <form id="terminal-form" autocomplete="off">
@@ -449,10 +449,10 @@
             <a href="https://www.tiktok.com/@archieauburn" target="_blank" rel="noopener noreferrer">TikTok <span aria-hidden="true">↗</span></a>
           </div>
           <form id="support-form" class="support-form" novalidate>
-            <label for="support-amount">Really enjoying Snowy?<br />You can throw in a buck or two.</label>
+            <label for="support-amount">Really enjoying Szns?<br />You can throw in a buck or two.</label>
             <div class="support-input-row">
               <div class="amount-field"><span aria-hidden="true">$</span><input id="support-amount" name="amount" inputmode="decimal" type="text" value="2" maxlength="16" aria-label="Support amount in US dollars" aria-describedby="support-feedback" autocomplete="off" /></div>
-              <button class="mini-button" type="submit">Support Snowy</button>
+              <button class="mini-button" type="submit">Support Szns</button>
             </div>
             <p id="support-feedback" class="payment-feedback" role="status" hidden></p>
           </form>
@@ -491,10 +491,10 @@
       <button
         class="dock-item"
         data-open="welcome"
-        aria-label="Open About Snowy"
+        aria-label="Open About Szns"
       >
         <svg aria-hidden="true"><use href="./assets/icons.svg#snow" /></svg
-        ><span class="dock-tooltip">Snowy</span><i aria-hidden="true"></i>
+        ><span class="dock-tooltip">Szns</span><i aria-hidden="true"></i>
       </button>
       <button
         class="dock-item"
@@ -516,7 +516,7 @@
       <a
         class="dock-item"
         href="https://github.com/soloiaros/snowy-mac"
-        aria-label="View Snowy source code on GitHub"
+        aria-label="View Szns source code on GitHub"
         target="_blank"
         rel="noopener noreferrer"
         ><svg aria-hidden="true"><use href="./assets/icons.svg#code" /></svg
@@ -535,7 +535,7 @@
       <div class="download-dialog-body">
         <svg class="dialog-app-icon" aria-hidden="true"><use href="./assets/icons.svg#snow" /></svg>
         <h2 id="download-title">What feels right to you?</h2>
-        <p id="download-description">Snowy is yours at any price. Yes, $0 too.</p>
+        <p id="download-description">Szns is yours at any price. Yes, $0 too.</p>
         <form id="download-form" novalidate>
           <label for="download-amount">Your price <span>(USD)</span></label>
           <div class="amount-field download-amount-field"><span aria-hidden="true">$</span><input id="download-amount" name="amount" type="text" inputmode="decimal" maxlength="16" value="0" autocomplete="off" aria-describedby="download-feedback" autofocus /></div>
@@ -550,21 +550,21 @@
           <button id="download-free" class="quiet-button" type="button" hidden>Download for $0 instead</button>
           <div class="dialog-actions">
             <button id="download-cancel" class="mini-button" type="button">Cancel</button>
-            <button id="download-submit" class="aqua-button" type="submit">Download Snowy</button>
+            <button id="download-submit" class="aqua-button" type="submit">Download Szns</button>
           </div>
         </form>
-        <p class="install-detail">Open the DMG, then drag Snowy into Applications.</p>
+        <p class="install-detail">Open the DMG, then drag the app into Applications.</p>
       </div>
     </dialog>
     <dialog id="beta-dialog" class="download-dialog" aria-labelledby="beta-title" aria-describedby="beta-description">
       <header class="dialog-titlebar">
         <div class="traffic-lights"><button class="light close" aria-label="Close beta notice" form="beta-actions" type="submit"></button></div>
-        <span>Snowy</span>
+        <span>Szns</span>
       </header>
       <div class="download-dialog-body">
         <svg class="dialog-app-icon" aria-hidden="true"><use href="./assets/icons.svg#snow" /></svg>
-        <h2 id="beta-title">Snowy is in beta</h2>
-        <p id="beta-description">If macOS blocks Snowy on first launch, go to <strong>System Settings → Privacy &amp; Security → Open Anyway</strong> and confirm for this download.</p>
+        <h2 id="beta-title">Szns is in beta</h2>
+        <p id="beta-description">If macOS blocks Szns on first launch, go to <strong>System Settings → Privacy &amp; Security → Open Anyway</strong> and confirm for this download.</p>
         <form id="beta-actions" class="dialog-actions" method="dialog">
           <button class="aqua-button" type="submit" autofocus>Got it</button>
         </form>
@@ -577,7 +577,7 @@
       ><div class="noscript-note">
         The interactive desktop needs JavaScript. You can still
         <a href="https://github.com/soloiaros/snowy-mac/releases"
-          >download Snowy from GitHub</a
+          >download Szns from GitHub</a
         >.
       </div></noscript
     >

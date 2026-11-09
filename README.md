@@ -1,6 +1,6 @@
-# Snowy ❄️
+# Szns (Seasons)
 
-Snow for your desktop. A native Mac app that lets winter settle on your windows, widgets, and bottom Dock.
+Seasons for your desktop. A native Mac app, based on [Snowy](https://github.com/soloiaros/snowy-mac) by Yaroslav Solovev, that lets winter settle on your windows, widgets, and bottom Dock.
 
 Sweep a pile with your pointer. Pick up a shovel. Make a little mess.
 
@@ -8,11 +8,11 @@ Sweep a pile with your pointer. Pick up a shovel. Make a little mess.
 
 ## Get it
 
-Download the latest [Apple Silicon DMG](https://github.com/soloiaros/snowy-mac/releases/latest/download/Snowy-macOS-arm64.dmg), open it, and drag **Snowy.app** onto **Applications**. Eject the disk image, then open Snowy from Applications. On a fresh setup, three quick pages show how to sweep snow, adjust wind, and find the menu-bar controls. Skip or close the walkthrough at any time; it won’t reopen on later launches.
+Download the latest [Apple Silicon DMG](https://github.com/soloiaros/snowy-mac/releases/latest/download/Snowy-macOS-arm64.dmg), open it, and drag the app onto **Applications**. Eject the disk image, then open Szns from Applications. The current download is still the upstream Snowy build. A local build shows the name Szns (Seasons). On a fresh setup, three quick pages show how to sweep snow, adjust wind, and find the menu-bar controls. Skip or close the walkthrough at any time; it won’t reopen on later launches.
 
 Requires **macOS 14 or later**. The current download is for Apple Silicon. Intel Macs can build from source. The 0.10.0 beta is signed locally and can trigger Gatekeeper’s malware-verification warning. If macOS blocks the copy you downloaded here, go to **System Settings → Privacy & Security → Open Anyway** after trying to open it.
 
-When a compatible release is available, **Update** appears in blue near the bottom of the snowflake menu. Click it to download, install, and reopen Snowy. To upgrade from 0.9.1 or earlier, quit Snowy and replace it in Applications using the DMG once.
+When a compatible release is available, **Update** appears in blue near the bottom of the snowflake menu. Click it to download, install, and reopen Szns. To upgrade from 0.9.1 or earlier, quit the app and replace it in Applications using the DMG once.
 
 ## Let it snow
 
@@ -20,14 +20,14 @@ Click the snowflake in your menu bar to make yourself comfortable:
 
 - Choose **Light**, **Steady**, or **Flurry**.
 - Brush snow away with the **Glove**, or choose **Shovel** for a proper clear-out.
-- Open **Wind…** and stretch or rotate the arrow to change its strength and direction.
+- Drag the wind arrow to change its strength and direction, or choose **Make it calm**.
 - **Pause** the weather or **Clear Settled Snow** whenever you like.
 
 Snow collects on window tops, widgets, Spotlight, and a bottom-positioned Dock. Moving windows push it around; closing Spotlight lets its uncovered snow fall. Side-positioned Docks are intentionally left out.
 
-Choose **Open Snowy…** in the snowflake menu to apply a wallpaper, select a pixel-art preset, or build your own desktop scene. Props catch snow and can slide when swept. In **Edit Scene**, place individual pieces and attach string lights to the desktop edges and widgets. Finder icon anchors are optional and require Accessibility access. The **Guide** includes **Replay Walkthrough**.
+Choose **Open Szns…** in the snowflake menu to apply a wallpaper, select a pixel-art preset, or build your own desktop scene. Props catch snow and can slide when swept. In **Edit Scene**, place individual pieces and attach string lights to the desktop edges and widgets. Finder icon anchors are optional and require Accessibility access. The **Guide** includes **Replay Walkthrough**.
 
-The desktop stays clickable. Snowy reads public window bounds for snow and widgets. Finder icon anchors use Accessibility only when enabled. Snowy keeps your settings and imported wallpapers on your Mac and checks GitHub for signed updates.
+The desktop stays clickable. Szns reads public window bounds for snow and widgets. Finder icon anchors use Accessibility only when enabled. Szns keeps your settings and imported wallpapers on your Mac and checks GitHub for signed updates.
 
 ## Build it yourself
 
@@ -37,7 +37,7 @@ You’ll need **Xcode 16 or later**, its Metal toolchain, and a Mac.
 git clone https://github.com/soloiaros/snowy-mac.git
 cd snowy-mac
 ./scripts/build-app.sh
-open build/Snowy.app
+open build/Szns.app
 ```
 
 The build script compiles the app and shaders, adds a local signature, and leaves the app in `build/`. It does not launch or install anything. If Xcode reports a missing Metal toolchain, install it from Xcode’s component settings first.

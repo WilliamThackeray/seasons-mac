@@ -30,7 +30,7 @@ export function parseAmount(raw) {
 // Local intent only. The server validates all amounts again before checkout.
 export function createPaymentIntent(raw, context = "download") {
   if (context !== "download" && context !== "support") {
-    return { ok: false, error: "Choose whether to download or support Snowy." };
+    return { ok: false, error: "Choose whether to download or support Szns." };
   }
   const amount = parseAmount(raw);
   if (!amount.ok) return amount;

@@ -69,17 +69,17 @@ func background(_ c: CGContext) {
         c.setFillColor(color(0xcce7ff, index.isMultiple(of: 9) ? 0.55 : 0.25))
         c.fillEllipse(in: CGRect(x: x, y: y, width: size, height: size))
     }
-    label("Snowy", at: CGPoint(x: 48, y: 79), size: 47, ink: color(0xf8fcff), medium: true, in: c)
-    label("A little winter for your Mac.", at: CGPoint(x: 50, y: 109), size: 17, ink: color(0xc4def1), in: c)
+    label("Szns", at: CGPoint(x: 48, y: 79), size: 47, ink: color(0xf8fcff), medium: true, in: c)
+    label("A little weather for your Mac.", at: CGPoint(x: 50, y: 109), size: 17, ink: color(0xc4def1), in: c)
     c.setStrokeColor(color(0xc4def1, 0.23)); c.setLineWidth(1)
     c.move(to: CGPoint(x: 49, y: 135)); c.addLine(to: CGPoint(x: 611, y: 135)); c.strokePath()
-    label("Drag Snowy to Applications", at: CGPoint(x: 330, y: 168), size: 17,
+    label("Drag Szns to Applications", at: CGPoint(x: 330, y: 168), size: 17,
           ink: color(0xe8f5ff), medium: true, centered: true, in: c)
     c.setStrokeColor(color(0xbce4ff, 0.78)); c.setLineWidth(3); c.setLineCap(.round); c.setLineJoin(.round)
     c.move(to: CGPoint(x: 285, y: 240)); c.addLine(to: CGPoint(x: 374, y: 240))
     c.move(to: CGPoint(x: 359, y: 226)); c.addLine(to: CGPoint(x: 374, y: 240))
     c.addLine(to: CGPoint(x: 359, y: 254)); c.strokePath()
-    label("Then open Snowy from Applications.", at: CGPoint(x: 330, y: 361), size: 15,
+    label("Then open Szns from Applications.", at: CGPoint(x: 330, y: 361), size: 15,
           ink: color(0xe8f5ff), centered: true, in: c)
     label("macOS 14 or later", at: CGPoint(x: 330, y: 396), size: 12,
           ink: color(0xb4cde2), centered: true, in: c)
@@ -112,7 +112,7 @@ let output = URL(fileURLWithPath: arguments[2], isDirectory: true)
 switch arguments[1] {
 case "background":
     for scale in [1, 2] {
-        try render(660, 440, scale: scale, to: output.appendingPathComponent(scale == 1 ? "Snowy.png" : "Snowy@2x.png"), draw: background)
+        try render(660, 440, scale: scale, to: output.appendingPathComponent(scale == 1 ? "Szns.png" : "Szns@2x.png"), draw: background)
     }
 case "icon":
     for size in [16, 32, 128, 256, 512] {

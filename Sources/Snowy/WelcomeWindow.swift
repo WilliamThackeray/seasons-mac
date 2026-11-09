@@ -9,7 +9,7 @@ final class WelcomeWindowController: NSWindowController, NSWindowDelegate {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: WelcomeView.contentSize),
                               styleMask: [.titled, .closable],
                               backing: .buffered, defer: false)
-        window.title = "Welcome to Snowy"
+        window.title = "Welcome to Szns"
         window.isReleasedWhenClosed = false
         window.tabbingMode = .disallowed
         window.animationBehavior = .none
@@ -39,7 +39,7 @@ enum WelcomeStep: Int, CaseIterable {
         switch self {
         case .desktop: "Snow on your desktop"
         case .wind: "Sweep snow and set the wind"
-        case .menu: "Snowy in the menu bar"
+        case .menu: "Szns in the menu bar"
         }
     }
 
@@ -47,15 +47,15 @@ enum WelcomeStep: Int, CaseIterable {
         switch self {
         case .desktop: "Snow settles on windows, widgets, and the bottom Dock. When you move a window, its snow moves with it."
         case .wind: "Sweep across a pile with your pointer. For a wider sweep, choose Shovel from Cursor Tool."
-        case .menu: "Click the snowflake in the menu bar to change snowfall, pause it, or clear settled snow."
+        case .menu: "Click the snowflake to set density and wind, choose the cursor tool, or pause and clear the snow."
         }
     }
 
     var secondaryDetail: String? {
         switch self {
         case .desktop: nil
-        case .wind: "Choose Wind… and drag the arrow to set its direction and strength."
-        case .menu: "Choose Open Snowy… for wallpapers, decorations, and the Guide."
+        case .wind: "Open the snowflake and drag the arrow to set the wind's direction and strength."
+        case .menu: "Choose Open Szns… for wallpapers, decorations, and the Guide."
         }
     }
 
@@ -287,9 +287,9 @@ private struct WelcomePreview: View {
             .overlay(alignment: .bottom) { Divider() }
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("Snowy").fontWeight(.semibold)
+                Text("Szns").fontWeight(.semibold)
                 Divider()
-                Text("Open Snowy…")
+                Text("Open Szns…")
                 Text("Pause Snow")
                 Text("Clear Settled Snow")
                 HStack {
@@ -298,12 +298,13 @@ private struct WelcomePreview: View {
                     Image(systemName: "chevron.right").foregroundStyle(.secondary)
                 }
                 Divider()
+                Text("Density").foregroundStyle(.secondary)
                 HStack {
                     Text("Steady")
                     Spacer()
                     Image(systemName: "checkmark").foregroundStyle(.secondary)
                 }
-                Text("Wind…")
+                Text("Wind")
             }
             .font(.system(size: 10))
             .padding(.horizontal, 10)
